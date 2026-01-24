@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { PageLayout } from "@/components/layout/PageLayout";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -168,19 +167,37 @@ const TrainingDetail = () => {
   });
   const { toast } = useToast();
 
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const training = trainingsData[Number(id)];
 
   if (!training) {
     return (
       <PageLayout>
-        <div className="container mx-auto px-4 py-32 text-center">
-          <h1 className="text-2xl font-bold mb-4">Program Not Found</h1>
-          <Link to="/training">
-            <Button variant="outline">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Programs
-            </Button>
-          </Link>
+        <div className="relative min-h-screen circuit-board-bg overflow-hidden">
+          {/* BACKGROUND ELEMENTS */}
+          <div className="absolute inset-0">
+            <div className="absolute top-1/4 -left-20 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float" />
+            <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-accent/15 rounded-full blur-3xl animate-float animation-delay-500" />
+          </div>
+
+          {/* 🔥 SINGLE GLASS OVERLAY */}
+          <div className="container mx-auto max-w-7xl relative z-10 px-4 sm:px-6 lg:px-8 mt-8">
+            <div className="bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/15 shadow-2xl p-8 sm:p-12 lg:p-16">
+              <div className="text-center">
+                <h1 className="text-2xl font-bold text-white mb-4">Program Not Found</h1>
+                <Link to="/training">
+                  <button className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-white/90 hover:bg-white/15 hover:border-white/30 transition-all duration-300 group">
+                    <ArrowLeft className="w-4 h-4 text-cyan-400 group-hover:-translate-x-0.5 transition-transform duration-300" />
+                    <span className="font-medium">Back to Programs</span>
+                  </button>
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </PageLayout>
     );
@@ -199,212 +216,262 @@ const TrainingDetail = () => {
 
   return (
     <PageLayout>
-      {/* Breadcrumb */}
-      <section className="pt-24 pb-4 bg-muted/50">
-        <div className="container mx-auto px-4">
-          <Link 
-            to="/training" 
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to All Programs
-          </Link>
+      <div className="relative min-h-screen circuit-board-bg overflow-hidden">
+        {/* BACKGROUND ELEMENTS */}
+        <div className="absolute inset-0">
+          <div className="absolute top-1/4 -left-20 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float" />
+          <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-accent/15 rounded-full blur-3xl animate-float animation-delay-500" />
+          <div
+            className="absolute inset-0 opacity-5"
+            style={{
+              backgroundImage: `
+                linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
+              `,
+              backgroundSize: "50px 50px",
+            }}
+          />
         </div>
-      </section>
 
-      {/* Hero */}
-      <section className="pb-12 bg-muted/50">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl">
-            <Badge className="mb-4">{training.badge}</Badge>
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-heading font-bold text-foreground mb-4">
-              {training.title}
-            </h1>
-            <p className="text-lg text-muted-foreground mb-6">
-              {training.longDescription}
-            </p>
-            
-            {/* Meta */}
-            <div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-accent" />
-                <span>{training.duration}</span>
+        {/* 🔥 SINGLE GLASS OVERLAY */}
+        <div className="container mx-auto max-w-7xl relative z-10 px-4 sm:px-6 lg:px-8 mt-8">
+          <div className="bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/15 shadow-2xl p-8 sm:p-12 lg:p-16">
+          
+          {/* Breadcrumb */}
+          <section className="mb-8">
+            <Link 
+              to="/training" 
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-sm text-white/90 hover:bg-white/15 hover:border-white/30 transition-all duration-300 group"
+            >
+              <ArrowLeft className="w-4 h-4 text-cyan-400 group-hover:-translate-x-0.5 transition-transform duration-300" />
+              <span className="font-medium">Back to All Programs</span>
+            </Link>
+          </section>
+
+          {/* Hero */}
+          <section className="mb-16">
+            <div className="max-w-4xl">
+              <div className="inline-block px-3 py-1 rounded-full bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 text-sm font-medium mb-4">
+                {training.badge}
               </div>
-              <div className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-accent" />
-                <span>{training.enrolled} enrolled</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-accent" />
-                <span>Next batch: Feb 2024</span>
+              <h1 
+                className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4"
+                style={{ fontFamily: "'Nasalization', sans-serif" }}
+              >
+                {training.title}
+              </h1>
+              <p className="text-lg text-white/70 mb-6">
+                {training.longDescription}
+              </p>
+              
+              {/* Meta */}
+              <div className="flex flex-wrap gap-6 text-sm text-white/60">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-cyan-400" />
+                  <span>{training.duration}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-cyan-400" />
+                  <span>{training.enrolled} enrolled</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-cyan-400" />
+                  <span>Next batch: Feb 2024</span>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
 
-      {/* Main Content */}
-      <section className="py-12 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-3 gap-12">
-            {/* Left Column - Details */}
-            <div className="lg:col-span-2 space-y-12">
-              {/* Curriculum */}
-              <div>
-                <h2 className="text-2xl font-heading font-semibold text-foreground mb-6 flex items-center gap-3">
-                  <BookOpen className="w-6 h-6 text-accent" />
-                  Curriculum
-                </h2>
-                <ul className="space-y-3">
-                  {training.curriculum.map((item, index) => (
-                    <li key={index} className="flex items-start gap-3 p-4 rounded-lg bg-muted/50">
-                      <span className="w-6 h-6 rounded-full bg-accent/10 text-accent text-sm font-medium flex items-center justify-center shrink-0">
-                        {index + 1}
-                      </span>
-                      <span className="text-foreground">{item}</span>
-                    </li>
-                  ))}
-                </ul>
+          {/* Main Content */}
+          <section className="mb-16">
+            <div className="grid lg:grid-cols-3 gap-12">
+              {/* Left Column - Curriculum Only */}
+              <div className="lg:col-span-2">
+                {/* Curriculum */}
+                <div>
+                  <h2 
+                    className="text-3xl md:text-4xl font-bold text-white mb-6 flex items-center gap-3"
+                    style={{ fontFamily: "'Nasalization', sans-serif" }}
+                  >
+                    <BookOpen className="w-6 h-6 text-cyan-400" />
+                    Curriculum
+                  </h2>
+                  <ul className="space-y-3">
+                    {training.curriculum.map((item, index) => (
+                      <li key={index} className="flex items-start gap-3 p-4 rounded-xl bg-black/40 backdrop-blur-md border-2 border-cyan-500/50 cursor-pointer transition-all duration-300 hover:border-cyan-400 hover:shadow-2xl hover:shadow-cyan-500/20">
+                        <span className="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 text-sm font-medium flex items-center justify-center shrink-0">
+                          {index + 1}
+                        </span>
+                        <span className="text-white/90">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
 
-              {/* Prerequisites */}
-              <div>
-                <h2 className="text-2xl font-heading font-semibold text-foreground mb-6 flex items-center gap-3">
-                  <GraduationCap className="w-6 h-6 text-accent" />
-                  Prerequisites
-                </h2>
-                <ul className="space-y-2">
-                  {training.prerequisites.map((item, index) => (
-                    <li key={index} className="flex items-center gap-3 text-muted-foreground">
-                      <CheckCircle2 className="w-5 h-5 text-accent shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Outcomes */}
-              <div>
-                <h2 className="text-2xl font-heading font-semibold text-foreground mb-6 flex items-center gap-3">
-                  <Award className="w-6 h-6 text-accent" />
-                  What You'll Achieve
-                </h2>
-                <ul className="grid sm:grid-cols-2 gap-4">
-                  {training.outcomes.map((item, index) => (
-                    <li key={index} className="flex items-start gap-3 p-4 rounded-lg bg-accent/5 border border-accent/20">
-                      <CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" />
-                      <span className="text-foreground">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            {/* Right Column - Enrollment Card */}
-            <div className="lg:col-span-1">
-              <div className="sticky top-24 p-6 rounded-2xl bg-card border border-border shadow-lg">
-                <div className="text-center mb-6">
-                  <div className="flex items-center justify-center gap-1 text-3xl font-bold text-foreground mb-1">
-                    <IndianRupee className="w-7 h-7" />
-                    {training.price.toLocaleString("en-IN")}
-                  </div>
-                  <p className="text-sm text-muted-foreground">One-time payment</p>
+              {/* Right Column - Prerequisites and Outcomes */}
+              <div className="lg:col-span-1 space-y-16">
+                {/* Prerequisites */}
+                <div className="mt-8">
+                  <h2 
+                    className="text-3xl md:text-4xl font-bold text-white mb-6 flex items-center gap-3"
+                    style={{ fontFamily: "'Nasalization', sans-serif" }}
+                  >
+                    <GraduationCap className="w-6 h-6 text-cyan-400" />
+                    Prerequisites
+                  </h2>
+                  <ul className="space-y-2">
+                    {training.prerequisites.map((item, index) => (
+                      <li key={index} className="flex items-center gap-3 text-white/70">
+                        <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
 
-                <Button 
-                  variant="accent" 
-                  size="lg" 
-                  className="w-full mb-4"
-                  onClick={() => setIsEnrollOpen(true)}
-                >
-                  Enroll Now
-                </Button>
-
-                <ul className="space-y-3 text-sm text-muted-foreground">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-accent" />
-                    Certificate of Completion
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-accent" />
-                    Hands-on Projects
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-accent" />
-                    Expert Instructors
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-accent" />
-                    Lifetime Access to Materials
-                  </li>
-                </ul>
+                {/* Outcomes */}
+                <div>
+                  <h2 
+                    className="text-3xl md:text-4xl font-bold text-white mb-6 flex items-center gap-3"
+                    style={{ fontFamily: "'Nasalization', sans-serif" }}
+                  >
+                    <Award className="w-6 h-6 text-cyan-400" />
+                    What You'll Achieve
+                  </h2>
+                  <ul className="space-y-3">
+                    {training.outcomes.map((item, index) => (
+                      <li key={index} className="flex items-center gap-3 text-white/70">
+                        <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </div>
+          </section>
+
+          {/* Enrollment Card - Full Width */}
+          <section className="mb-16">
+            <div className="p-8 rounded-2xl bg-black/40 backdrop-blur-md border-2 border-cyan-500/50 cursor-pointer transition-all duration-300 hover:border-cyan-400 hover:shadow-2xl hover:shadow-cyan-500/20">
+              <div className="grid md:grid-cols-2 gap-8 items-center">
+                <div className="text-center md:text-left">
+                  <div className="flex items-center justify-center md:justify-start gap-2 text-4xl md:text-5xl font-bold text-white mb-2">
+                    <IndianRupee className="w-8 h-8 md:w-10 md:h-10 text-cyan-400" />
+                    {training.price.toLocaleString("en-IN")}
+                  </div>
+                  <p className="text-base md:text-lg text-white/60">One-time payment</p>
+                </div>
+                
+                <div className="text-center md:text-right">
+                  <button
+                    onClick={() => setIsEnrollOpen(true)}
+                    className="inline-flex items-center justify-center gap-3 bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 py-4 px-8 rounded-xl hover:bg-cyan-500/30 hover:border-cyan-400 transition-all duration-300 font-medium text-lg md:text-xl"
+                  >
+                    Enroll Now
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-4 gap-6 mt-8">
+                <div className="flex items-center gap-3 text-white/70">
+                  <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0" />
+                  <span className="text-sm">Certificate of Completion</span>
+                </div>
+                <div className="flex items-center gap-3 text-white/70">
+                  <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0" />
+                  <span className="text-sm">Hands-on Projects</span>
+                </div>
+                <div className="flex items-center gap-3 text-white/70">
+                  <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0" />
+                  <span className="text-sm">Expert Instructors</span>
+                </div>
+                <div className="flex items-center gap-3 text-white/70">
+                  <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0" />
+                  <span className="text-sm">Lifetime Access to Materials</span>
+                </div>
+              </div>
+            </div>
+          </section>
           </div>
         </div>
-      </section>
+      </div>
 
       {/* Enrollment Modal */}
       <Dialog open={isEnrollOpen} onOpenChange={setIsEnrollOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-white/5 backdrop-blur-xl border border-white/15">
           <DialogHeader>
-            <DialogTitle>Enroll in {training.title}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-white">Enroll in {training.title}</DialogTitle>
+            <DialogDescription className="text-white/70">
               Fill in your details to proceed with enrollment.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleEnrollSubmit} className="space-y-4 mt-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                placeholder="Enter your full name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-              />
+              <Label htmlFor="name" className="text-white/80 text-sm">Full Name</Label>
+              <div className="flex items-center gap-3 bg-black/40 border border-cyan-500/30 rounded-lg px-3 py-2 focus-within:border-cyan-400">
+                <Input
+                  id="name"
+                  placeholder="Enter your full name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="bg-transparent border-none text-white placeholder:text-white/60 w-full focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
+                  required
+                />
+              </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Enter your email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-              />
+              <Label htmlFor="email" className="text-white/80 text-sm">Email</Label>
+              <div className="flex items-center gap-3 bg-black/40 border border-cyan-500/30 rounded-lg px-3 py-2 focus-within:border-cyan-400">
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="bg-transparent border-none text-white placeholder:text-white/60 w-full focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
+                  required
+                />
+              </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="mobile">Mobile Number</Label>
-              <Input
-                id="mobile"
-                type="tel"
-                placeholder="Enter your mobile number"
-                value={formData.mobile}
-                onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
-                required
-              />
+              <Label htmlFor="mobile" className="text-white/80 text-sm">Mobile Number</Label>
+              <div className="flex items-center gap-3 bg-black/40 border border-cyan-500/30 rounded-lg px-3 py-2 focus-within:border-cyan-400">
+                <Input
+                  id="mobile"
+                  type="tel"
+                  placeholder="Enter your mobile number"
+                  value={formData.mobile}
+                  onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                  className="bg-transparent border-none text-white placeholder:text-white/60 w-full focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
+                  required
+                />
+              </div>
             </div>
             <div className="space-y-3">
-              <Label>I am a</Label>
+              <Label className="text-white/80 text-sm">I am a</Label>
               <RadioGroup
                 value={formData.userType}
                 onValueChange={(value) => setFormData({ ...formData, userType: value })}
+                className="text-white"
               >
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="professional" id="professional" />
-                  <Label htmlFor="professional" className="font-normal">Professional</Label>
+                  <RadioGroupItem value="professional" id="professional" className="border-cyan-500/30 text-cyan-400" />
+                  <Label htmlFor="professional" className="font-normal text-white/80">Professional</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="student" id="student" />
-                  <Label htmlFor="student" className="font-normal">Student</Label>
+                  <RadioGroupItem value="student" id="student" className="border-cyan-500/30 text-cyan-400" />
+                  <Label htmlFor="student" className="font-normal text-white/80">Student</Label>
                 </div>
               </RadioGroup>
             </div>
-            <Button type="submit" variant="accent" className="w-full">
+            <button
+              type="submit"
+              className="w-full flex items-center justify-center gap-3 bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 py-3 px-4 rounded-lg hover:bg-cyan-500/30 hover:border-cyan-400 transition-all duration-300 font-medium"
+            >
               Proceed to Payment
-            </Button>
+            </button>
           </form>
         </DialogContent>
       </Dialog>

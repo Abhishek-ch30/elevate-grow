@@ -1,147 +1,196 @@
 import { PageLayout } from "@/components/layout/PageLayout";
 import { Target, Eye, Heart, Award, Users, Zap } from "lucide-react";
+import CountUp from "@/components/CountUp";
 
 const values = [
   {
     icon: Award,
     title: "Excellence",
-    description: "We strive for excellence in every project, delivering solutions that exceed expectations.",
+    description:
+      "We strive for excellence in every project, delivering solutions that exceed expectations.",
   },
   {
     icon: Users,
     title: "Collaboration",
-    description: "We believe in the power of teamwork and close partnership with our clients.",
+    description:
+      "We believe in the power of teamwork and close partnership with our clients.",
   },
   {
     icon: Zap,
     title: "Innovation",
-    description: "We embrace new technologies and creative approaches to solve complex problems.",
+    description:
+      "We embrace new technologies and creative approaches to solve complex problems.",
   },
   {
     icon: Heart,
     title: "Integrity",
-    description: "Transparency and honesty guide all our interactions and business decisions.",
+    description:
+      "Transparency and honesty guide all our interactions and business decisions.",
   },
 ];
 
 const About = () => {
   return (
     <PageLayout>
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 hero-gradient overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-1/4 -right-20 w-80 h-80 bg-accent/10 rounded-full blur-3xl" />
+      <div className="relative min-h-screen circuit-board-bg overflow-hidden">
+        {/* BACKGROUND ELEMENTS */}
+        <div className="absolute inset-0">
+          <div className="absolute top-1/4 -left-20 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float" />
+          <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-accent/15 rounded-full blur-3xl animate-float animation-delay-500" />
+          <div
+            className="absolute inset-0 opacity-5"
+            style={{
+              backgroundImage: `
+                linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
+              `,
+              backgroundSize: "50px 50px",
+            }}
+          />
         </div>
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-3xl">
-            <span className="text-accent font-medium text-sm uppercase tracking-wider">About Us</span>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-white mt-4 mb-6">
-              Driving Innovation Through Technology
-            </h1>
-            <p className="text-lg text-white/70">
-              We are a team of passionate technologists and strategists dedicated to helping businesses thrive in the digital age.
-            </p>
-          </div>
-        </div>
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />
-      </section>
 
-      {/* Company Overview */}
-      <section className="py-20 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div className="animate-fade-up">
-              <h2 className="text-3xl md:text-4xl font-heading font-bold text-foreground mb-6">
+        {/* 🔥 SINGLE GLASS OVERLAY */}
+        <div className="container mx-auto max-w-7xl relative z-10 px-4 sm:px-6 lg:px-8 mt-8">
+          <div className="bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/15 shadow-2xl p-8 sm:p-12 lg:p-16">
+          {/* HERO */}
+          <section className="mb-24">
+            <span className="text-accent text-sm uppercase tracking-wider">
+              About Us
+            </span>
+            <h1
+              className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mt-4 mb-6"
+              style={{ fontFamily: "'Nasalization', sans-serif" }}
+            >
+              Driving Innovation Through{" "}
+              <span className="hero-text-gradient">Technology</span>
+            </h1>
+            <p className="text-lg text-white/70 max-w-3xl">
+              We are a team of passionate technologists and strategists dedicated
+              to helping businesses thrive in the digital age.
+            </p>
+          </section>
+
+          {/* COMPANY OVERVIEW */}
+          <section className="grid lg:grid-cols-2 gap-16 items-center mb-24">
+            <div>
+              <h2
+                className="text-3xl md:text-4xl font-bold text-white mb-6"
+                style={{ fontFamily: "'Nasalization', sans-serif" }}
+              >
                 Who We Are
               </h2>
-              <p className="text-muted-foreground mb-6 leading-relaxed">
-                TechNova is a premier product development and consultancy firm established with a vision to bridge the gap between innovative ideas and successful digital products. With years of experience across diverse industries, we bring technical excellence and strategic insight to every engagement.
+              <p className="text-white/70 mb-6 leading-relaxed">
+                QThink Solutions is a premier product development and consultancy
+                firm focused on transforming innovative ideas into impactful
+                digital products.
               </p>
-              <p className="text-muted-foreground mb-6 leading-relaxed">
-                Our team comprises seasoned developers, architects, designers, and strategists who are passionate about creating impactful solutions. We don't just build products—we build partnerships that drive long-term success.
+              <p className="text-white/70 mb-6 leading-relaxed">
+                Our team consists of developers, designers, and strategists who
+                believe in long-term partnerships—not just delivery.
               </p>
-              <p className="text-muted-foreground leading-relaxed">
-                Beyond our core services, we're committed to nurturing the next generation of tech professionals through our comprehensive training programs, sharing the knowledge and expertise we've accumulated over the years.
+              <p className="text-white/70 leading-relaxed">
+                We also empower future professionals through hands-on training
+                and mentorship programs.
               </p>
             </div>
-            <div className="relative animate-fade-up animation-delay-200">
-              <div className="aspect-square rounded-2xl bg-gradient-to-br from-primary/5 to-accent/10 border border-border p-8 flex items-center justify-center">
-                <div className="grid grid-cols-2 gap-6 w-full max-w-sm">
-                  <div className="stat-card text-center">
-                    <span className="text-3xl font-bold text-accent">8+</span>
-                    <p className="text-sm text-muted-foreground mt-1">Years Experience</p>
-                  </div>
-                  <div className="stat-card text-center">
-                    <span className="text-3xl font-bold text-accent">50+</span>
-                    <p className="text-sm text-muted-foreground mt-1">Projects Delivered</p>
-                  </div>
-                  <div className="stat-card text-center">
-                    <span className="text-3xl font-bold text-accent">500+</span>
-                    <p className="text-sm text-muted-foreground mt-1">Professionals Trained</p>
-                  </div>
-                  <div className="stat-card text-center">
-                    <span className="text-3xl font-bold text-accent">25+</span>
-                    <p className="text-sm text-muted-foreground mt-1">Team Members</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      {/* Vision & Mission */}
-      <section className="py-20 bg-muted/50">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="p-8 md:p-10 rounded-2xl bg-card shadow-sm border border-border animate-fade-up">
-              <div className="w-14 h-14 rounded-xl bg-accent/10 text-accent flex items-center justify-center mb-6">
-                <Eye className="w-7 h-7" />
-              </div>
-              <h3 className="text-2xl font-heading font-semibold text-foreground mb-4">Our Vision</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                To be the catalyst for digital transformation, empowering businesses and professionals to harness the full potential of technology. We envision a future where innovative solutions drive sustainable growth and create lasting impact.
-              </p>
-            </div>
-            <div className="p-8 md:p-10 rounded-2xl bg-card shadow-sm border border-border animate-fade-up animation-delay-100">
-              <div className="w-14 h-14 rounded-xl bg-accent/10 text-accent flex items-center justify-center mb-6">
-                <Target className="w-7 h-7" />
-              </div>
-              <h3 className="text-2xl font-heading font-semibold text-foreground mb-4">Our Mission</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                To deliver exceptional digital solutions through innovative product development, strategic consultancy, and transformative training. We are committed to excellence, continuous learning, and creating value for our clients and the broader tech community.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Core Values */}
-      <section className="py-20 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <span className="text-accent font-medium text-sm uppercase tracking-wider">What Drives Us</span>
-            <h2 className="text-3xl md:text-4xl font-heading font-bold text-foreground mt-3">
-              Our Core Values
-            </h2>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {values.map((value, index) => (
-              <div
-                key={value.title}
-                className="p-6 rounded-xl bg-card border border-border hover:border-accent/30 hover:shadow-md transition-all duration-300 animate-fade-up"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="w-12 h-12 rounded-lg bg-accent/10 text-accent flex items-center justify-center mb-4">
-                  <value.icon className="w-6 h-6" />
+            <div className="grid grid-cols-2 gap-6">
+              {[
+                [8, "Years Experience"],
+                [50, "Projects Delivered"],
+                [500, "Professionals Trained"],
+                [25, "Team Members"],
+              ].map(([value, label], index) => (
+                <div
+                  key={label}
+                  className="text-center p-6 rounded-xl border border-white/10 bg-white/5 cursor-pointer transition-all duration-300 hover:scale-105 hover:border-cyan-400/50 hover:shadow-lg hover:shadow-cyan-500/10"
+                >
+                  <div className="flex items-center justify-center gap-1 mb-2">
+                    <CountUp 
+                      to={value} 
+                      className="text-3xl font-bold text-accent"
+                      duration={2.5}
+                      delay={index * 0.2}
+                    />
+                    <span className="text-3xl font-bold text-accent">+</span>
+                  </div>
+                  <p className="text-sm text-white/60">{label}</p>
                 </div>
-                <h4 className="text-lg font-semibold text-foreground mb-2">{value.title}</h4>
-                <p className="text-sm text-muted-foreground">{value.description}</p>
+              ))}
+            </div>
+          </section>
+
+          {/* VISION & MISSION */}
+          <section className="grid md:grid-cols-2 gap-10 mb-24">
+            <div className="p-8 rounded-xl bg-black/40 backdrop-blur-md border-2 border-cyan-500/50 cursor-pointer transition-all duration-300 hover:border-cyan-400 hover:shadow-2xl hover:shadow-cyan-500/20"
+                 style={{ transform: 'scale(1)', transition: 'transform 0.3s ease' }}
+                 onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                 onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
+              <div className="w-14 h-14 mb-6 rounded-xl bg-accent/20 text-accent flex items-center justify-center">
+                <Eye />
               </div>
-            ))}
+              <h3 className="text-2xl font-bold text-white mb-4">
+                Our Vision
+              </h3>
+              <p className="text-white/70">
+                To empower businesses and professionals to unlock the full
+                potential of technology through innovation and expertise.
+              </p>
+            </div>
+
+            <div className="p-8 rounded-xl bg-black/40 backdrop-blur-md border-2 border-cyan-500/50 cursor-pointer transition-all duration-300 hover:border-cyan-400 hover:shadow-2xl hover:shadow-cyan-500/20"
+                 style={{ transform: 'scale(1)', transition: 'transform 0.3s ease' }}
+                 onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                 onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
+              <div className="w-14 h-14 mb-6 rounded-xl bg-accent/20 text-accent flex items-center justify-center">
+                <Target />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-4">
+                Our Mission
+              </h3>
+              <p className="text-white/70">
+                Delivering world-class digital solutions, strategic consulting,
+                and transformative training with integrity and excellence.
+              </p>
+            </div>
+          </section>
+
+          {/* CORE VALUES */}
+          <section>
+            <div className="text-center mb-12">
+              <span className="text-accent text-sm uppercase tracking-wider">
+                What Drives Us
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold text-white mt-3">
+                Our Core Values
+              </h2>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {values.map((value) => (
+                <div
+                  key={value.title}
+                  className="p-6 rounded-xl bg-black/40 backdrop-blur-md border-2 border-cyan-500/50 cursor-pointer transition-all duration-300 hover:border-cyan-400 hover:shadow-2xl hover:shadow-cyan-500/20"
+                  style={{ transform: 'scale(1)', transition: 'transform 0.3s ease' }}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  <div className="w-12 h-12 mb-4 rounded-lg bg-accent/20 text-accent flex items-center justify-center">
+                    <value.icon className="w-6 h-6" />
+                  </div>
+                  <h4 className="text-lg font-semibold text-white mb-2">
+                    {value.title}
+                  </h4>
+                  <p className="text-sm text-white/70">
+                    {value.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
           </div>
         </div>
-      </section>
+      </div>
     </PageLayout>
   );
 };

@@ -2,38 +2,41 @@ import { ReactNode, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   LayoutDashboard, 
-  Users, 
-  GraduationCap, 
+  BookOpen, 
   CreditCard, 
   Award,
   Menu,
   X,
   LogOut,
-  ChevronRight
+  ChevronRight,
+  User,
+  Settings
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import ModernButton from "@/components/ui/ModernButton";
+import { useAuth } from "../../contexts/AuthContext";
 
-interface AdminLayoutProps {
+interface UserLayoutProps {
   children: ReactNode;
 }
 
 const navItems = [
-  { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/admin/users", icon: Users, label: "Users" },
-  { href: "/admin/trainings", icon: GraduationCap, label: "Training Programs" },
-  { href: "/admin/payments", icon: CreditCard, label: "Payments" },
-  { href: "/admin/certificates", icon: Award, label: "Certificates" },
+  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/enrolled-programs", icon: BookOpen, label: "My Training Programs" },
+  { href: "/certificates", icon: Award, label: "Certificates" },
+  { href: "/profile", icon: User, label: "Profile" },
+  { href: "/settings", icon: Settings, label: "Settings" },
 ];
 
-export function AdminLayout({ children }: AdminLayoutProps) {
+export function UserLayout({ children }: UserLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, userProfile, signOut } = useAuth();
 
-  const handleLogout = () => {
-    // In real app, this would clear auth state
+  const handleLogout = async () => {
+    await signOut();
     navigate("/");
   };
 
@@ -41,13 +44,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     <div className="min-h-screen bg-muted/30">
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-sidebar border-b border-sidebar-border z-50 flex items-center justify-between px-4">
-        <Link to="/admin" className="flex items-center gap-2">
+        <Link to="/dashboard" className="flex items-center gap-2">
           <img
             src="https://i.ibb.co/wFJCHfcK/Screenshot-2026-01-21-121113.png"
             alt="QThink Solution Logo"
             className="w-8 h-8 rounded-lg object-contain"
           />
-          <span className="text-lg font-semibold text-sidebar-foreground">QThink Solution Admin</span>
+          <span className="text-lg font-semibold text-sidebar-foreground">QThink Solution</span>
         </Link>
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -73,6 +76,23 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             className="w-8 h-8 rounded-lg object-contain"
           />
           <span className="text-lg font-semibold text-sidebar-foreground">QThink Solution</span>
+        </div>
+
+        {/* User Info */}
+        <div className="p-4 border-b border-sidebar-border">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-sidebar-primary text-sidebar-primary-foreground flex items-center justify-center">
+              <User className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-sidebar-foreground truncate">
+                {userProfile?.full_name || user?.email?.split('@')[0]}
+              </p>
+              <p className="text-xs text-sidebar-foreground/70 truncate">
+                {user?.email}
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Navigation */}

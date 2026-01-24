@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Supabase CORS Test</title>
+</head>
+<body>
+    <h1>Supabase Connection Test</h1>
+    <button onclick="testSignup()">Test Signup</button>
+    <div id="result"></div>
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script>
+        const supabase = createClient(
+            'https://yjtzfialonxujbskzjmu.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqdHpmaWFsb254dWpic2t6am11Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwMzAwNjcsImV4cCI6MjA4MzYwNjA2N30.UoLNqok4I3cP9fXrxqRWkoeWNcXwYKDnuM_Fn7vUg1k'
+        );
+
+        async function testSignup() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email: 'test@example.com',
+                    password: 'testpassword123',
+                    options: {
+                        data: {
+                            full_name: 'Test User',
+                            profession: 'student'
+                        }
+                    }
+                });
+                
+                if (error) {
+                    resultDiv.innerHTML = `<div style="color: red;">Error: ${error.message}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div style="color: green;">Success! User created.</div>`;
+                }
+            } catch (err) {
+                resultDiv.innerHTML = `<div style="color: red;">Network Error: ${err.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

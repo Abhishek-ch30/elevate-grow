@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Navbar } from "./Navbar";
+import { TubelightNavbar } from "./TubelightNavbar";
 import { Footer } from "./Footer";
 
 interface PageLayoutProps {
@@ -8,9 +8,9 @@ interface PageLayoutProps {
 
 export function PageLayout({ children }: PageLayoutProps) {
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      <main className="flex-1">{children}</main>
+    <div className="min-h-screen flex flex-col page-gradient">
+      <TubelightNavbar />
+      <main className="pt-14 flex-1">{children}</main>
       <Footer />
     </div>
   );

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AdminLayout } from "./AdminLayout";
 import { Button } from "@/components/ui/button";
+import ModernButton from "@/components/ui/ModernButton";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -18,66 +19,70 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
+import { User, Enrollment, Payment } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
 
-const users = [
-  { 
-    id: 1, 
-    name: "Rahul Sharma", 
-    email: "rahul.sharma@email.com", 
-    phone: "+91 98765 43210",
-    type: "Professional",
-    enrollments: 2,
-    paymentStatus: "verified",
-    joinedDate: "2024-01-10"
-  },
-  { 
-    id: 2, 
-    name: "Priya Patel", 
-    email: "priya.patel@email.com", 
-    phone: "+91 98765 43211",
-    type: "Student",
-    enrollments: 1,
-    paymentStatus: "pending",
-    joinedDate: "2024-01-12"
-  },
-  { 
-    id: 3, 
-    name: "Amit Kumar", 
-    email: "amit.kumar@email.com", 
-    phone: "+91 98765 43212",
-    type: "Professional",
-    enrollments: 3,
-    paymentStatus: "verified",
-    joinedDate: "2024-01-08"
-  },
-  { 
-    id: 4, 
-    name: "Sneha Reddy", 
-    email: "sneha.reddy@email.com", 
-    phone: "+91 98765 43213",
-    type: "Student",
-    enrollments: 1,
-    paymentStatus: "pending",
-    joinedDate: "2024-01-14"
-  },
-  { 
-    id: 5, 
-    name: "Vikram Singh", 
-    email: "vikram.singh@email.com", 
-    phone: "+91 98765 43214",
-    type: "Professional",
-    enrollments: 2,
-    paymentStatus: "verified",
-    joinedDate: "2024-01-05"
-  },
-];
+interface UserWithDetails extends User {
+  enrollments_count?: number;
+  latest_payment_status?: string;
+  user_type?: string;
+}
 
 const UsersManagement = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [usersList, setUsersList] = useState<UserWithDetails[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  const filteredUsers = users.filter(user => 
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase())
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const { data: users, error } = await supabase
+        .from('users')
+        .select(`
+          *,
+          enrollments:enrollments(count),
+          payments:payments(status)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const usersWithDetails: UserWithDetails[] = users?.map(user => {
+        const enrollmentsCount = user.enrollments?.length || 0;
+        const latestPayment = user.payments?.sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )[0];
+        
+        return {
+          ...user,
+          enrollments_count: enrollmentsCount,
+          latest_payment_status: latestPayment?.status || 'none',
+          user_type: enrollmentsCount > 2 ? 'Professional' : 'Student'
+        };
+      }) || [];
+
+      setUsersList(usersWithDetails);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch users.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredUsers = usersList.filter(user => 
+    user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -102,102 +107,120 @@ const UsersManagement = () => {
               className="pl-10"
             />
           </div>
-          <Button variant="outline" className="sm:w-auto">
-            <Filter className="w-4 h-4 mr-2" />
-            Filters
-          </Button>
+          <ModernButton 
+            text="Filters"
+            onClick={() => {}}
+          />
         </div>
 
         {/* Users Table */}
         <div className="bg-card rounded-xl border border-border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border bg-muted/50">
-                  <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">User</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Contact</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Type</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Enrollments</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Payment</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Joined</th>
-                  <th className="text-right px-6 py-4 text-sm font-medium text-muted-foreground">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredUsers.map((user) => (
-                  <tr key={user.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-medium">
-                          {user.name.split(" ").map(n => n[0]).join("")}
-                        </div>
-                        <span className="font-medium text-foreground">{user.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Mail className="w-3.5 h-3.5" />
-                          {user.email}
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Phone className="w-3.5 h-3.5" />
-                          {user.phone}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <Badge variant={user.type === "Professional" ? "default" : "secondary"}>
-                        {user.type}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2 text-sm">
-                        <GraduationCap className="w-4 h-4 text-accent" />
-                        <span className="font-medium text-foreground">{user.enrollments}</span>
-                        <span className="text-muted-foreground">programs</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={cn(
-                        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium",
-                        user.paymentStatus === "verified" 
-                          ? "bg-green-500/10 text-green-600" 
-                          : "bg-amber-500/10 text-amber-600"
-                      )}>
-                        <span className={cn(
-                          "w-1.5 h-1.5 rounded-full",
-                          user.paymentStatus === "verified" ? "bg-green-500" : "bg-amber-500"
-                        )} />
-                        {user.paymentStatus === "verified" ? "Verified" : "Pending"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-muted-foreground">
-                      {user.joinedDate}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>View Details</DropdownMenuItem>
-                          <DropdownMenuItem>View Enrollments</DropdownMenuItem>
-                          <DropdownMenuItem>Send Email</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          
-          {filteredUsers.length === 0 && (
+          {loading ? (
             <div className="p-8 text-center text-muted-foreground">
-              No users found matching your search.
+              Loading users...
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border bg-muted/50">
+                    <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">User</th>
+                    <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Contact</th>
+                    <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Type</th>
+                    <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Enrollments</th>
+                    <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Payment</th>
+                    <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Joined</th>
+                    <th className="text-right px-6 py-4 text-sm font-medium text-muted-foreground">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredUsers.map((user) => (
+                    <tr key={user.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-medium">
+                            {user.full_name?.split(" ").map(n => n[0]).join("").toUpperCase() || 'U'}
+                          </div>
+                          <span className="font-medium text-foreground">{user.full_name || 'Unknown'}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Mail className="w-3.5 h-3.5" />
+                            {user.email}
+                          </div>
+                          {user.phone && (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Phone className="w-3.5 h-3.5" />
+                              {user.phone}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge variant={user.user_type === "Professional" ? "default" : "secondary"}>
+                          {user.user_type || "Student"}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2 text-sm">
+                          <GraduationCap className="w-4 h-4 text-accent" />
+                          <span className="font-medium text-foreground">{user.enrollments_count || 0}</span>
+                          <span className="text-muted-foreground">programs</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {user.latest_payment_status === 'none' ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-500/10 text-gray-600">
+                            No Payments
+                          </span>
+                        ) : (
+                          <span className={cn(
+                            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium",
+                            user.latest_payment_status === "verified" 
+                              ? "bg-green-500/10 text-green-600" 
+                              : user.latest_payment_status === "pending_verification"
+                              ? "bg-amber-500/10 text-amber-600"
+                              : "bg-red-500/10 text-red-600"
+                          )}>
+                            <span className={cn(
+                              "w-1.5 h-1.5 rounded-full",
+                              user.latest_payment_status === "verified" ? "bg-green-500" : 
+                              user.latest_payment_status === "pending_verification" ? "bg-amber-500" : "bg-red-500"
+                            )} />
+                            {user.latest_payment_status === "verified" ? "Verified" : 
+                             user.latest_payment_status === "pending_verification" ? "Pending" : "Failed"}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-muted-foreground">
+                        {new Date(user.created_at).toLocaleDateString('en-IN')}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem>View Details</DropdownMenuItem>
+                            <DropdownMenuItem>View Enrollments</DropdownMenuItem>
+                            <DropdownMenuItem>Send Email</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              {filteredUsers.length === 0 && (
+                <div className="p-8 text-center text-muted-foreground">
+                  No users found matching your search.
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AdminLayout } from "./AdminLayout";
 import { Button } from "@/components/ui/button";
+import ModernButton from "@/components/ui/ModernButton";
 import { Input } from "@/components/ui/input";
 import { 
   Search, 
@@ -18,67 +19,144 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
+import { Certificate, User, TrainingProgram, Enrollment } from "@/lib/supabase";
 
-const certificates = [
-  { 
-    id: "CERT-2024-001", 
-    user: "Rahul Sharma", 
-    email: "rahul.sharma@email.com",
-    training: "React.js Masterclass", 
-    issueDate: "2024-01-15",
-    status: "issued"
-  },
-  { 
-    id: "CERT-2024-002", 
-    user: "Vikram Singh", 
-    email: "vikram.singh@email.com",
-    training: "UI/UX Design Fundamentals", 
-    issueDate: "2024-01-13",
-    status: "issued"
-  },
-  { 
-    id: null, 
-    user: "Priya Patel", 
-    email: "priya.patel@email.com",
-    training: "Cloud Architecture with AWS", 
-    issueDate: null,
-    status: "eligible"
-  },
-  { 
-    id: null, 
-    user: "Amit Kumar", 
-    email: "amit.kumar@email.com",
-    training: "Full Stack Development", 
-    issueDate: null,
-    status: "eligible"
-  },
-];
+interface CertificateWithDetails extends Certificate {
+  user: User;
+  training_program: TrainingProgram;
+}
+
+interface EligibleCertificate {
+  user_id: string;
+  training_id: string;
+  user: User;
+  training_program: TrainingProgram;
+  status: 'eligible';
+}
+
+type CertificateItem = CertificateWithDetails | EligibleCertificate;
 
 const CertificatesManagement = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedCertificate, setSelectedCertificate] = useState<typeof certificates[0] | null>(null);
-  const [certificatesList, setCertificatesList] = useState(certificates);
+  const [selectedCertificate, setSelectedCertificate] = useState<CertificateItem | null>(null);
+  const [certificatesList, setCertificatesList] = useState<CertificateItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  useEffect(() => {
+    fetchCertificates();
+  }, []);
+
+  const fetchCertificates = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch issued certificates
+      const { data: issuedCertificates, error: issuedError } = await supabase
+        .from('certificates')
+        .select(`
+          *,
+          user:users(*),
+          training_program:training_programs(*)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (issuedError) throw issuedError;
+
+      // Fetch completed enrollments without certificates (eligible for certificates)
+      const { data: completedEnrollments, error: enrollmentError } = await supabase
+        .from('enrollments')
+        .select(`
+          user_id,
+          training_id,
+          user:users(*),
+          training_program:training_programs(*)
+        `)
+        .eq('status', 'completed');
+
+      if (enrollmentError) throw enrollmentError;
+
+      // Get existing certificate user-training pairs
+      const existingPairs = new Set(
+        issuedCertificates?.map(cert => `${cert.user_id}-${cert.training_id}`) || []
+      );
+
+      // Filter out completed enrollments that already have certificates
+      const eligibleCertificates: EligibleCertificate[] = (completedEnrollments || [])
+        .filter(enrollment => !existingPairs.has(`${enrollment.user_id}-${enrollment.training_id}`))
+        .map(enrollment => ({
+          user_id: enrollment.user_id,
+          training_id: enrollment.training_id,
+          user: enrollment.user,
+          training_program: enrollment.training_program,
+          status: 'eligible' as const
+        }));
+
+      const allCertificates: CertificateItem[] = [
+        ...(issuedCertificates || []),
+        ...eligibleCertificates
+      ];
+
+      setCertificatesList(allCertificates);
+    } catch (error) {
+      console.error('Error fetching certificates:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch certificates.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredCertificates = certificatesList.filter(cert => {
-    const matchesSearch = cert.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          cert.training.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          (cert.id && cert.id.toLowerCase().includes(searchQuery.toLowerCase()));
+    const user = 'user' in cert ? cert.user.full_name : cert.user.full_name;
+    const training = 'training_program' in cert ? cert.training_program.title : cert.training_program.title;
+    const certId = 'certificate_id' in cert ? cert.certificate_id : null;
+    
+    const matchesSearch = user?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          training?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (certId && certId.toLowerCase().includes(searchQuery.toLowerCase()));
+    
     const matchesStatus = statusFilter === "all" || cert.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const handleIssueCertificate = (userEmail: string) => {
-    const newId = `CERT-2024-${String(certificatesList.filter(c => c.id).length + 1).padStart(3, '0')}`;
-    setCertificatesList(prev => prev.map(c => 
-      c.email === userEmail ? { ...c, id: newId, issueDate: new Date().toISOString().split('T')[0], status: "issued" } : c
-    ));
-    setSelectedCertificate(null);
-    toast({
-      title: "Certificate Issued",
-      description: `Certificate ${newId} has been generated successfully.`,
-    });
+  const handleIssueCertificate = async (userId: string, trainingId: string) => {
+    try {
+      // Generate unique certificate ID
+      const certificateId = `CERT-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`;
+      
+      const { error } = await supabase
+        .from('certificates')
+        .insert({
+          certificate_id: certificateId,
+          user_id: userId,
+          training_id: trainingId,
+          issue_date: new Date().toISOString().split('T')[0]
+        });
+
+      if (error) throw error;
+
+      // Refresh certificates list
+      await fetchCertificates();
+      
+      setSelectedCertificate(null);
+      toast({
+        title: "Certificate Issued",
+        description: `Certificate ${certificateId} has been generated successfully.`,
+      });
+    } catch (error) {
+      console.error('Error issuing certificate:', error);
+      toast({
+        title: "Error",
+        description: "Failed to issue certificate.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -151,83 +229,92 @@ const CertificatesManagement = () => {
 
         {/* Certificates Table */}
         <div className="bg-card rounded-xl border border-border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border bg-muted/50">
-                  <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Certificate ID</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">User</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Training</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Issue Date</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Status</th>
-                  <th className="text-right px-6 py-4 text-sm font-medium text-muted-foreground">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredCertificates.map((cert, index) => (
-                  <tr key={cert.id || index} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
-                    <td className="px-6 py-4">
-                      {cert.id ? (
-                        <span className="font-mono text-sm text-foreground">{cert.id}</span>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">—</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div>
-                        <p className="font-medium text-foreground">{cert.user}</p>
-                        <p className="text-sm text-muted-foreground">{cert.email}</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-foreground">{cert.training}</td>
-                    <td className="px-6 py-4 text-sm text-muted-foreground">
-                      {cert.issueDate || "—"}
-                    </td>
-                    <td className="px-6 py-4">
-                      {cert.status === "issued" ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-600">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          Issued
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600">
-                          <FileText className="w-3.5 h-3.5" />
-                          Eligible
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      {cert.status === "issued" ? (
-                        <div className="flex gap-2 justify-end">
-                          <Button variant="ghost" size="sm">
-                            <Eye className="w-4 h-4 mr-2" />
-                            View
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Download className="w-4 h-4 mr-2" />
-                            Download
-                          </Button>
-                        </div>
-                      ) : (
-                        <Button 
-                          variant="accent" 
-                          size="sm"
-                          onClick={() => setSelectedCertificate(cert)}
-                        >
-                          <Award className="w-4 h-4 mr-2" />
-                          Issue
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          
-          {filteredCertificates.length === 0 && (
+          {loading ? (
             <div className="p-8 text-center text-muted-foreground">
-              No certificates found matching your criteria.
+              Loading certificates...
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border bg-muted/50">
+                    <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Certificate ID</th>
+                    <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">User</th>
+                    <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Training</th>
+                    <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Issue Date</th>
+                    <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Status</th>
+                    <th className="text-right px-6 py-4 text-sm font-medium text-muted-foreground">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredCertificates.map((cert, index) => {
+                    const user = 'user' in cert ? cert.user : cert.user;
+                    const training = 'training_program' in cert ? cert.training_program : cert.training_program;
+                    const certId = 'certificate_id' in cert ? cert.certificate_id : null;
+                    const issueDate = 'issue_date' in cert ? cert.issue_date : null;
+                    
+                    return (
+                      <tr key={certId || `${cert.user_id}-${cert.training_id}`} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+                        <td className="px-6 py-4">
+                          {certId ? (
+                            <span className="font-mono text-sm text-foreground">{certId}</span>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">—</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div>
+                            <p className="font-medium text-foreground">{user?.full_name || 'Unknown User'}</p>
+                            <p className="text-sm text-muted-foreground">{user?.email || 'No email'}</p>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-foreground">{training?.title || 'Unknown Training'}</td>
+                        <td className="px-6 py-4 text-sm text-muted-foreground">
+                          {issueDate || "—"}
+                        </td>
+                        <td className="px-6 py-4">
+                          {cert.status === "issued" ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-600">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              Issued
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600">
+                              <FileText className="w-3.5 h-3.5" />
+                              Eligible
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          {cert.status === "issued" ? (
+                            <div className="flex gap-2 justify-end">
+                              <Button variant="ghost" size="sm">
+                                <Eye className="w-4 h-4 mr-2" />
+                                View
+                              </Button>
+                              <Button variant="ghost" size="sm">
+                                <Download className="w-4 h-4 mr-2" />
+                                Download
+                              </Button>
+                            </div>
+                          ) : (
+                            <ModernButton 
+                              text="Issue"
+                              onClick={() => setSelectedCertificate(cert)}
+                            />
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              
+              {filteredCertificates.length === 0 && (
+                <div className="p-8 text-center text-muted-foreground">
+                  No certificates found matching your criteria.
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -243,27 +330,34 @@ const CertificatesManagement = () => {
             <div className="space-y-4 mt-4">
               <div className="p-4 rounded-lg bg-muted/50 space-y-2">
                 <p className="text-sm text-muted-foreground">Recipient</p>
-                <p className="font-medium text-foreground">{selectedCertificate.user}</p>
-                <p className="text-sm text-muted-foreground">{selectedCertificate.email}</p>
+                <p className="font-medium text-foreground">
+                  {'user' in selectedCertificate ? selectedCertificate.user.full_name : selectedCertificate.user.full_name}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {'user' in selectedCertificate ? selectedCertificate.user.email : selectedCertificate.user.email}
+                </p>
               </div>
               <div className="p-4 rounded-lg bg-muted/50 space-y-2">
                 <p className="text-sm text-muted-foreground">Training Program</p>
-                <p className="font-medium text-foreground">{selectedCertificate.training}</p>
+                <p className="font-medium text-foreground">
+                  {'training_program' in selectedCertificate ? selectedCertificate.training_program.title : selectedCertificate.training_program.title}
+                </p>
               </div>
               <div className="p-4 rounded-lg bg-accent/10 border border-accent/20">
                 <p className="text-sm text-muted-foreground">Certificate ID (Auto-generated)</p>
                 <p className="font-mono font-medium text-foreground">
-                  CERT-2024-{String(certificatesList.filter(c => c.id).length + 1).padStart(3, '0')}
+                  CERT-{new Date().getFullYear()}-{Date.now().toString().slice(-6)}
                 </p>
               </div>
-              <Button 
-                variant="accent" 
+              <ModernButton 
+                text="Generate & Issue Certificate"
+                onClick={() => {
+                  if ('user_id' in selectedCertificate) {
+                    handleIssueCertificate(selectedCertificate.user_id, selectedCertificate.training_id);
+                  }
+                }}
                 className="w-full"
-                onClick={() => handleIssueCertificate(selectedCertificate.email)}
-              >
-                <Award className="w-4 h-4 mr-2" />
-                Generate & Issue Certificate
-              </Button>
+              />
             </div>
           )}
         </DialogContent>

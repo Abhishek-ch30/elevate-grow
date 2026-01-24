@@ -1,4 +1,6 @@
+import { useState, useEffect } from "react";
 import { AdminLayout } from "./AdminLayout";
+import { supabase } from "../../lib/supabase";
 import { 
   Users, 
   GraduationCap, 
@@ -11,56 +13,242 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const stats = [
-  {
-    label: "Total Users",
-    value: "1,234",
-    change: "+12%",
-    changeType: "positive",
-    icon: Users,
-    color: "text-blue-600 bg-blue-500/10",
-  },
-  {
-    label: "Active Enrollments",
-    value: "456",
-    change: "+8%",
-    changeType: "positive",
-    icon: GraduationCap,
-    color: "text-green-600 bg-green-500/10",
-  },
-  {
-    label: "Total Revenue",
-    value: "₹12,45,000",
-    change: "+23%",
-    changeType: "positive",
-    icon: CreditCard,
-    color: "text-purple-600 bg-purple-500/10",
-  },
-  {
-    label: "Certificates Issued",
-    value: "389",
-    change: "+15%",
-    changeType: "positive",
-    icon: Award,
-    color: "text-amber-600 bg-amber-500/10",
-  },
-];
+interface DashboardStats {
+  totalUsers: number;
+  activeEnrollments: number;
+  totalRevenue: number;
+  certificatesIssued: number;
+  pendingPayments: number;
+  pendingCertificates: number;
+  newEnrollmentsToday: number;
+  // Add previous period stats for percentage calculations
+  previousUsers?: number;
+  previousEnrollments?: number;
+  previousRevenue?: number;
+  previousCertificates?: number;
+}
 
-const recentPayments = [
-  { id: 1, user: "Rahul Sharma", training: "React.js Masterclass", amount: 15000, status: "verified", date: "2024-01-15" },
-  { id: 2, user: "Priya Patel", training: "Cloud Architecture", amount: 25000, status: "pending", date: "2024-01-15" },
-  { id: 3, user: "Amit Kumar", training: "Full Stack Development", amount: 35000, status: "verified", date: "2024-01-14" },
-  { id: 4, user: "Sneha Reddy", training: "React Native", amount: 20000, status: "pending", date: "2024-01-14" },
-  { id: 5, user: "Vikram Singh", training: "UI/UX Design", amount: 12000, status: "verified", date: "2024-01-13" },
-];
+interface RecentPayment {
+  id: string;
+  user_name: string;
+  user_email: string;
+  training_title: string;
+  amount: number;
+  status: string;
+  created_at: string;
+}
 
-const pendingActions = [
-  { label: "Payments awaiting verification", count: 8, icon: CreditCard },
-  { label: "Certificates ready to issue", count: 12, icon: Award },
-  { label: "New enrollments today", count: 5, icon: GraduationCap },
-];
+const AdminDashboard = () => {
+  const [stats, setStats] = useState<DashboardStats>({
+    totalUsers: 0,
+    activeEnrollments: 0,
+    totalRevenue: 0,
+    certificatesIssued: 0,
+    pendingPayments: 0,
+    pendingCertificates: 0,
+    newEnrollmentsToday: 0,
+    previousUsers: 0,
+    previousEnrollments: 0,
+    previousRevenue: 0,
+    previousCertificates: 0
+  });
+  const [recentPayments, setRecentPayments] = useState<RecentPayment[]>([]);
+  const [loading, setLoading] = useState(true);
 
-const Dashboard = () => {
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      // Fetch current period data
+      const { count: totalUsers, error: userError } = await supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true });
+
+      if (userError) {
+        console.error('Error fetching users:', userError);
+      }
+
+      const { count: activeEnrollments } = await supabase
+        .from('enrollments')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['enrolled', 'pending_payment']);
+
+      const { data: revenueData } = await supabase
+        .from('payments')
+        .select('amount')
+        .eq('status', 'verified');
+
+      const totalRevenue = revenueData?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
+
+      const { count: certificatesIssued } = await supabase
+        .from('certificates')
+        .select('*', { count: 'exact', head: true });
+
+      const { count: pendingPayments } = await supabase
+        .from('payments')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending_verification');
+
+      const { data: completedEnrollments } = await supabase
+        .from('enrollments')
+        .select('user_id, training_id')
+        .eq('status', 'completed');
+
+      const { data: existingCertificates } = await supabase
+        .from('certificates')
+        .select('user_id, training_id');
+
+      const pendingCertificates = completedEnrollments?.length - (existingCertificates?.length || 0);
+
+      const today = new Date().toISOString().split('T')[0];
+      const { count: newEnrollmentsToday } = await supabase
+        .from('enrollments')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', today)
+        .lt('created_at', new Date(new Date().getTime() + 24 * 60 * 60 * 1000).toISOString());
+
+      // Fetch previous period data (last 30 days for comparison)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const sixtyDaysAgo = new Date();
+      sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
+      const { count: previousUsers } = await supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true })
+        .lt('created_at', thirtyDaysAgo.toISOString());
+
+      const { count: previousEnrollments } = await supabase
+        .from('enrollments')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['enrolled', 'pending_payment'])
+        .lt('created_at', thirtyDaysAgo.toISOString());
+
+      const { data: previousRevenueData } = await supabase
+        .from('payments')
+        .select('amount')
+        .eq('status', 'verified')
+        .lt('created_at', thirtyDaysAgo.toISOString());
+
+      const previousRevenue = previousRevenueData?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
+
+      const { count: previousCertificates } = await supabase
+        .from('certificates')
+        .select('*', { count: 'exact', head: true })
+        .lt('created_at', thirtyDaysAgo.toISOString());
+
+      // Fetch recent payments with user and training details
+      const { data: paymentsData } = await supabase
+        .from('payments')
+        .select(`
+          *,
+          user:users(full_name, email),
+          training:training_programs(title)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      const formattedPayments: RecentPayment[] = paymentsData?.map(payment => ({
+        id: payment.id,
+        user_name: payment.user?.full_name || 'Unknown User',
+        user_email: payment.user?.email || '',
+        training_title: payment.training?.title || 'Unknown Training',
+        amount: payment.amount,
+        status: payment.status,
+        created_at: payment.created_at
+      })) || [];
+
+      // Calculate percentage changes
+      const calculatePercentageChange = (current: number, previous: number) => {
+        if (previous === 0) return current > 0 ? '+100%' : '0%';
+        const change = ((current - previous) / previous) * 100;
+        return `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`;
+      };
+
+      setStats({
+        totalUsers: totalUsers || 0,
+        activeEnrollments: activeEnrollments || 0,
+        totalRevenue,
+        certificatesIssued: certificatesIssued || 0,
+        pendingPayments: pendingPayments || 0,
+        pendingCertificates: Math.max(0, pendingCertificates || 0),
+        newEnrollmentsToday: newEnrollmentsToday || 0,
+        previousUsers: previousUsers || 0,
+        previousEnrollments: previousEnrollments || 0,
+        previousRevenue,
+        previousCertificates: previousCertificates || 0
+      });
+
+      setRecentPayments(formattedPayments);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const calculatePercentageChange = (current: number, previous: number) => {
+    if (previous === 0) return current > 0 ? '+100%' : '0%';
+    const change = ((current - previous) / previous) * 100;
+    return `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`;
+  };
+
+  const statsData = [
+    {
+      label: "Total Users",
+      value: stats.totalUsers.toLocaleString(),
+      change: calculatePercentageChange(stats.totalUsers, stats.previousUsers || 0),
+      changeType: (stats.totalUsers >= (stats.previousUsers || 0) ? "positive" : "negative") as const,
+      icon: Users,
+      color: "text-blue-600 bg-blue-500/10",
+    },
+    {
+      label: "Active Enrollments",
+      value: stats.activeEnrollments.toLocaleString(),
+      change: calculatePercentageChange(stats.activeEnrollments, stats.previousEnrollments || 0),
+      changeType: (stats.activeEnrollments >= (stats.previousEnrollments || 0) ? "positive" : "negative") as const,
+      icon: GraduationCap,
+      color: "text-green-600 bg-green-500/10",
+    },
+    {
+      label: "Total Revenue",
+      value: `₹${stats.totalRevenue.toLocaleString("en-IN")}`,
+      change: calculatePercentageChange(stats.totalRevenue, stats.previousRevenue || 0),
+      changeType: (stats.totalRevenue >= (stats.previousRevenue || 0) ? "positive" : "negative") as const,
+      icon: CreditCard,
+      color: "text-purple-600 bg-purple-500/10",
+    },
+    {
+      label: "Certificates Issued",
+      value: stats.certificatesIssued.toLocaleString(),
+      change: calculatePercentageChange(stats.certificatesIssued, stats.previousCertificates || 0),
+      changeType: (stats.certificatesIssued >= (stats.previousCertificates || 0) ? "positive" : "negative") as const,
+      icon: Award,
+      color: "text-amber-600 bg-amber-500/10",
+    },
+  ];
+
+  const pendingActions = [
+    { label: "Payments awaiting verification", count: stats.pendingPayments, icon: CreditCard },
+    { label: "Certificates ready to issue", count: stats.pendingCertificates, icon: Award },
+    { label: "New enrollments today", count: stats.newEnrollmentsToday, icon: GraduationCap },
+  ];
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Loading dashboard data...</p>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
   return (
     <AdminLayout>
       <div className="space-y-8">
@@ -72,7 +260,7 @@ const Dashboard = () => {
 
         {/* Stats Grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat) => (
+          {statsData.map((stat) => (
             <div key={stat.label} className="stat-card">
               <div className="flex items-start justify-between">
                 <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", stat.color)}>
@@ -130,34 +318,51 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {recentPayments.map((payment) => (
-                  <tr key={payment.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
-                    <td className="px-6 py-4 text-sm font-medium text-foreground">{payment.user}</td>
-                    <td className="px-6 py-4 text-sm text-muted-foreground">{payment.training}</td>
-                    <td className="px-6 py-4 text-sm text-foreground flex items-center gap-1">
-                      <IndianRupee className="w-3 h-3" />
-                      {payment.amount.toLocaleString("en-IN")}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={cn(
-                        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium",
-                        payment.status === "verified" 
-                          ? "bg-green-500/10 text-green-600" 
-                          : "bg-amber-500/10 text-amber-600"
-                      )}>
-                        <span className={cn(
-                          "w-1.5 h-1.5 rounded-full",
-                          payment.status === "verified" ? "bg-green-500" : "bg-amber-500"
-                        )} />
-                        {payment.status === "verified" ? "Verified" : "Pending"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-muted-foreground flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5" />
-                      {payment.date}
+                {recentPayments.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
+                      No recent payments found
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  recentPayments.map((payment) => (
+                    <tr key={payment.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+                      <td className="px-6 py-4">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{payment.user_name}</p>
+                          <p className="text-xs text-muted-foreground">{payment.user_email}</p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-muted-foreground">{payment.training_title}</td>
+                      <td className="px-6 py-4 text-sm text-foreground flex items-center gap-1">
+                        <IndianRupee className="w-3 h-3" />
+                        {payment.amount.toLocaleString("en-IN")}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={cn(
+                          "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium",
+                          payment.status === "verified" 
+                            ? "bg-green-500/10 text-green-600" 
+                            : payment.status === "pending_verification"
+                            ? "bg-amber-500/10 text-amber-600"
+                            : "bg-red-500/10 text-red-600"
+                        )}>
+                          <span className={cn(
+                            "w-1.5 h-1.5 rounded-full",
+                            payment.status === "verified" ? "bg-green-500" : 
+                            payment.status === "pending_verification" ? "bg-amber-500" : "bg-red-500"
+                          )} />
+                          {payment.status === "verified" ? "Verified" : 
+                           payment.status === "pending_verification" ? "Pending" : "Failed"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-muted-foreground flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5" />
+                        {new Date(payment.created_at).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -167,4 +372,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default AdminDashboard;

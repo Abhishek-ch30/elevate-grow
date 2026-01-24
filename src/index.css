@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap');
 
 @layer base {
   :root {
@@ -38,12 +38,12 @@
     --input: 214 32% 91%;
     --ring: 173 80% 40%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
     /* Custom Extended Palette */
     --success: 152 69% 40%;
     --success-foreground: 0 0% 100%;
-    
+
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
@@ -53,7 +53,8 @@
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(222 47% 15%) 0%, hsl(222 47% 25%) 100%);
     --gradient-accent: linear-gradient(135deg, hsl(173 80% 40%) 0%, hsl(173 80% 50%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(222 47% 11%) 0%, hsl(222 47% 20%) 50%, hsl(173 50% 25%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(222 47% 11%) 0%, hsl(222 47% 20%) 30%, hsl(173 50% 25%) 70%, hsl(222 47% 15%) 100%);
+    --gradient-page: linear-gradient(180deg, #000000 0%, #000000 100%);
     --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(210 20% 98%) 100%);
 
     /* Shadows */
@@ -72,6 +73,14 @@
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 222 47% 20%;
     --sidebar-ring: 173 80% 40%;
+    --bg-0: #09090b;
+    --bg-100: #18181b;
+    --bg-200: #27272a;
+    --bg-300: #3f3f46;
+    --text-100: #fafafa;
+    --text-200: #e4e4e7;
+    --text-300: #a1a1aa;
+    --text-400: #71717a;
   }
 
   .dark {
@@ -103,6 +112,12 @@
     --input: 222 32% 18%;
     --ring: 173 80% 45%;
   }
+  .theme {
+    --font-serif: "Instrument Serif", Georgia, serif;
+    --font-sans: "Inter", system-ui, sans-serif;
+    --color-background: var(--bg-0);
+    --color-foreground: var(--text-100);
+  }
 }
 
 @layer base {
@@ -129,9 +144,33 @@
     font-family: 'Inter', sans-serif;
   }
 
+  .font-orbitron {
+    font-family: 'Orbitron', sans-serif;
+  }
+
   /* Hero Section Styles */
   .hero-gradient {
     background: var(--gradient-hero);
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .page-gradient {
+    background: var(--gradient-page);
+    min-height: 100vh;
+  }
+
+  .circuit-board-bg {
+    background-image: 
+      radial-gradient(circle at 25% 25%, rgba(0, 255, 255, 0.1) 0%, transparent 2%),
+      radial-gradient(circle at 75% 75%, rgba(0, 255, 255, 0.1) 0%, transparent 2%),
+      linear-gradient(90deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(0deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px),
+      url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%2300ffff' stroke-width='0.5' opacity='0.15'%3E%3Cpath d='M10,10 L30,10 L30,30 L50,30'/%3E%3Cpath d='M60,10 L80,10 L80,40 L60,40'/%3E%3Cpath d='M10,60 L30,60 L30,80 L50,80'/%3E%3Cpath d='M60,60 L90,60'/%3E%3Cpath d='M10,90 L40,90'/%3E%3Cpath d='M70,90 L90,90 L90,70'/%3E%3Ccircle cx='10' cy='10' r='2' fill='%2300ffff'/%3E%3Ccircle cx='30' cy='10' r='2' fill='%2300ffff'/%3E%3Ccircle cx='50' cy='30' r='2' fill='%2300ffff'/%3E%3Ccircle cx='60' cy='10' r='2' fill='%2300ffff'/%3E%3Ccircle cx='80' cy='10' r='2' fill='%2300ffff'/%3E%3Ccircle cx='80' cy='40' r='2' fill='%2300ffff'/%3E%3Ccircle cx='60' cy='40' r='2' fill='%2300ffff'/%3E%3Ccircle cx='10' cy='60' r='2' fill='%2300ffff'/%3E%3Ccircle cx='30' cy='60' r='2' fill='%2300ffff'/%3E%3Ccircle cx='30' cy='80' r='2' fill='%2300ffff'/%3E%3Ccircle cx='50' cy='80' r='2' fill='%2300ffff'/%3E%3Ccircle cx='60' cy='60' r='2' fill='%2300ffff'/%3E%3Ccircle cx='90' cy='60' r='2' fill='%2300ffff'/%3E%3Ccircle cx='10' cy='90' r='2' fill='%2300ffff'/%3E%3Ccircle cx='40' cy='90' r='2' fill='%2300ffff'/%3E%3Ccircle cx='70' cy='90' r='2' fill='%2300ffff'/%3E%3Ccircle cx='90' cy='90' r='2' fill='%2300ffff'/%3E%3Ccircle cx='90' cy='70' r='2' fill='%2300ffff'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px, 100px 100px;
+    background-position: 0 0, 0 0, 0 0, 0 0, 0 0;
   }
 
   .hero-text-gradient {
@@ -269,4 +308,71 @@
       transform: scale(1);
     }
   }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@theme inline {
+  @keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+    }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    }
+  }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0) translateX(0) rotate(0deg) scale(1); }
+  50% { transform: translateY(-20px) translateX(10px) rotate(5deg) scale(1.05); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Autofill styling for dark theme */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: white !important;
+  -webkit-box-shadow: 0 0 0px 1000px rgba(0, 0, 0, 0.4) inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+  background-color: rgba(0, 0, 0, 0.4) !important;
+  border-color: rgba(34, 211, 238, 0.3) !important;
+}
+
+input:autofill,
+input:autofill:hover,
+input:autofill:focus,
+textarea:autofill,
+textarea:autofill:hover,
+textarea:autofill:focus,
+select:autofill,
+select:autofill:hover,
+select:autofill:focus {
+  -webkit-text-fill-color: white !important;
+  -webkit-box-shadow: 0 0 0px 1000px rgba(0, 0, 0, 0.4) inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+  background-color: rgba(0, 0, 0, 0.4) !important;
+  border-color: rgba(34, 211, 238, 0.3) !important;
+}
+
+.animate-float.animation-delay-500 {
+  animation-delay: 0.5s;
 }

@@ -1,6 +1,7 @@
 import { PageLayout } from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import ModernButton from "@/components/ui/ModernButton";
 import { 
   Code2, 
   Lightbulb, 
@@ -103,48 +104,69 @@ const services = [
 const Services = () => {
   return (
     <PageLayout>
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 bg-gradient-to-b from-muted/50 to-background overflow-hidden">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center">
-            <span className="text-accent font-medium text-sm uppercase tracking-wider">Our Services</span>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-foreground mt-4 mb-6">
-              Comprehensive Technology Solutions
+      <div className="relative min-h-screen circuit-board-bg overflow-hidden">
+        {/* BACKGROUND ELEMENTS */}
+        <div className="absolute inset-0">
+          <div className="absolute top-1/4 -left-20 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float" />
+          <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-accent/15 rounded-full blur-3xl animate-float animation-delay-500" />
+          <div
+            className="absolute inset-0 opacity-5"
+            style={{
+              backgroundImage: `
+                linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
+              `,
+              backgroundSize: "50px 50px",
+            }}
+          />
+        </div>
+
+        {/* 🔥 SINGLE GLASS OVERLAY */}
+        <div className="container mx-auto max-w-7xl relative z-10 px-4 sm:px-6 lg:px-8 mt-8">
+          <div className="bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/15 shadow-2xl p-8 sm:p-12 lg:p-16">
+
+          {/* HERO */}
+          <section className="mb-24">
+            <span className="text-accent text-sm uppercase tracking-wider">
+              Our Services
+            </span>
+            <h1
+              className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mt-4 mb-6"
+              style={{ fontFamily: "'Nasalization', sans-serif" }}
+            >
+              Comprehensive Technology{" "}
+              <span className="hero-text-gradient">Solutions</span>
             </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-lg text-white/70 max-w-3xl">
               From concept to launch and beyond, we provide end-to-end services to help you build, scale, and succeed in the digital landscape.
             </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Services Grid */}
-      <section className="py-20 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-8">
+          </section>
+          {/* SERVICES GRID */}
+          <section className="mb-24">
+            <div className="grid lg:grid-cols-2 gap-8">
             {services.map((service, index) => (
               <div
                 key={service.title}
-                className={cn(
-                  "group p-8 rounded-2xl bg-card border border-border hover:border-accent/30 hover:shadow-lg transition-all duration-300 animate-fade-up"
-                )}
-                style={{ animationDelay: `${index * 100}ms` }}
+                className="p-8 rounded-xl bg-black/40 backdrop-blur-md border-2 border-cyan-500/50 cursor-pointer transition-all duration-300 hover:border-cyan-400 hover:shadow-2xl hover:shadow-cyan-500/20"
+                style={{ transform: 'scale(1)', transition: 'transform 0.3s ease' }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
               >
                 <div className="flex items-start gap-5">
                   <div className={cn("w-14 h-14 rounded-xl flex items-center justify-center shrink-0", service.color)}>
                     <service.icon className="w-7 h-7" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-xl font-semibold text-foreground mb-2 group-hover:text-accent transition-colors">
+                    <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-cyan-400 transition-colors">
                       {service.title}
                     </h3>
-                    <p className="text-muted-foreground mb-6">
+                    <p className="text-white/70 mb-6">
                       {service.description}
                     </p>
                     <ul className="grid grid-cols-2 gap-3">
                       {service.features.map((feature) => (
-                        <li key={feature} className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <CheckCircle2 className="w-4 h-4 text-accent shrink-0" />
+                        <li key={feature} className="flex items-center gap-2 text-sm text-white/60">
+                          <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
                           {feature}
                         </li>
                       ))}
@@ -154,35 +176,31 @@ const Services = () => {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 bg-muted/50">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-heading font-bold text-foreground mb-6">
-              Ready to Start Your Project?
-            </h2>
-            <p className="text-muted-foreground mb-8">
-              Let's discuss how we can help bring your vision to life. Our team is ready to understand your needs and propose the best solution.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/contact">
-                <Button variant="accent" size="lg" className="group">
-                  Get a Free Consultation
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-              <Link to="/training">
-                <Button variant="outline" size="lg">
-                  Explore Training Programs
-                </Button>
-              </Link>
+          </section>
+          {/* CTA SECTION */}
+          <section>
+            <div className="text-center">
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+                Ready to Start Your Project?
+              </h2>
+              <p className="text-white/70 mb-8 max-w-2xl mx-auto">
+                Let's discuss how we can help bring your vision to life. Our team is ready to understand your needs and propose the best solution.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <ModernButton 
+                  text="Get a Free Consultation"
+                  onClick={() => window.location.href = '/contact'}
+                />
+                <ModernButton 
+                  text="Explore Training Programs"
+                  onClick={() => window.location.href = '/training'}
+                />
+              </div>
             </div>
+          </section>
           </div>
         </div>
-      </section>
+      </div>
     </PageLayout>
   );
 };

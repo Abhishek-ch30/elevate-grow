@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { AdminLayout } from "./AdminLayout";
-import { supabase } from "../../lib/supabase";
+import { api } from "../../lib/api";
 import { 
   Users, 
   GraduationCap, 
@@ -61,127 +61,38 @@ const AdminDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      // Fetch current period data
-      const { count: totalUsers, error: userError } = await supabase
-        .from('users')
-        .select('*', { count: 'exact', head: true });
+      // Use admin dashboard API endpoint
+      const dashboardResponse = await api.admin.getDashboard();
+      const dashboard = dashboardResponse.data?.dashboard;
+      
+      if (dashboard) {
+        setStats({
+          totalUsers: dashboard.stats.total_users,
+          activeEnrollments: dashboard.stats.total_enrollments,
+          totalRevenue: 0, // This would need to be calculated from payments
+          certificatesIssued: dashboard.stats.total_certificates,
+          pendingPayments: dashboard.stats.pending_payments,
+          pendingCertificates: 0, // This would need to be calculated
+          newEnrollmentsToday: 0, // This would need to be calculated
+          previousUsers: 0,
+          previousEnrollments: 0,
+          previousRevenue: 0,
+          previousCertificates: 0
+        });
 
-      if (userError) {
-        console.error('Error fetching users:', userError);
+        // Map recent payments to expected format
+        const formattedPayments: RecentPayment[] = dashboard.recent_payments?.map(payment => ({
+          id: payment.id,
+          user_name: payment.full_name || 'Unknown User',
+          user_email: payment.email || '',
+          training_title: payment.training_title || 'Unknown Training',
+          amount: payment.amount,
+          status: payment.status,
+          created_at: payment.created_at
+        })) || [];
+
+        setRecentPayments(formattedPayments);
       }
-
-      const { count: activeEnrollments } = await supabase
-        .from('enrollments')
-        .select('*', { count: 'exact', head: true })
-        .in('status', ['enrolled', 'pending_payment']);
-
-      const { data: revenueData } = await supabase
-        .from('payments')
-        .select('amount')
-        .eq('status', 'verified');
-
-      const totalRevenue = revenueData?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
-
-      const { count: certificatesIssued } = await supabase
-        .from('certificates')
-        .select('*', { count: 'exact', head: true });
-
-      const { count: pendingPayments } = await supabase
-        .from('payments')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending_verification');
-
-      const { data: completedEnrollments } = await supabase
-        .from('enrollments')
-        .select('user_id, training_id')
-        .eq('status', 'completed');
-
-      const { data: existingCertificates } = await supabase
-        .from('certificates')
-        .select('user_id, training_id');
-
-      const pendingCertificates = completedEnrollments?.length - (existingCertificates?.length || 0);
-
-      const today = new Date().toISOString().split('T')[0];
-      const { count: newEnrollmentsToday } = await supabase
-        .from('enrollments')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', today)
-        .lt('created_at', new Date(new Date().getTime() + 24 * 60 * 60 * 1000).toISOString());
-
-      // Fetch previous period data (last 30 days for comparison)
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const sixtyDaysAgo = new Date();
-      sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
-
-      const { count: previousUsers } = await supabase
-        .from('users')
-        .select('*', { count: 'exact', head: true })
-        .lt('created_at', thirtyDaysAgo.toISOString());
-
-      const { count: previousEnrollments } = await supabase
-        .from('enrollments')
-        .select('*', { count: 'exact', head: true })
-        .in('status', ['enrolled', 'pending_payment'])
-        .lt('created_at', thirtyDaysAgo.toISOString());
-
-      const { data: previousRevenueData } = await supabase
-        .from('payments')
-        .select('amount')
-        .eq('status', 'verified')
-        .lt('created_at', thirtyDaysAgo.toISOString());
-
-      const previousRevenue = previousRevenueData?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
-
-      const { count: previousCertificates } = await supabase
-        .from('certificates')
-        .select('*', { count: 'exact', head: true })
-        .lt('created_at', thirtyDaysAgo.toISOString());
-
-      // Fetch recent payments with user and training details
-      const { data: paymentsData } = await supabase
-        .from('payments')
-        .select(`
-          *,
-          user:users(full_name, email),
-          training:training_programs(title)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      const formattedPayments: RecentPayment[] = paymentsData?.map(payment => ({
-        id: payment.id,
-        user_name: payment.user?.full_name || 'Unknown User',
-        user_email: payment.user?.email || '',
-        training_title: payment.training?.title || 'Unknown Training',
-        amount: payment.amount,
-        status: payment.status,
-        created_at: payment.created_at
-      })) || [];
-
-      // Calculate percentage changes
-      const calculatePercentageChange = (current: number, previous: number) => {
-        if (previous === 0) return current > 0 ? '+100%' : '0%';
-        const change = ((current - previous) / previous) * 100;
-        return `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`;
-      };
-
-      setStats({
-        totalUsers: totalUsers || 0,
-        activeEnrollments: activeEnrollments || 0,
-        totalRevenue,
-        certificatesIssued: certificatesIssued || 0,
-        pendingPayments: pendingPayments || 0,
-        pendingCertificates: Math.max(0, pendingCertificates || 0),
-        newEnrollmentsToday: newEnrollmentsToday || 0,
-        previousUsers: previousUsers || 0,
-        previousEnrollments: previousEnrollments || 0,
-        previousRevenue,
-        previousCertificates: previousCertificates || 0
-      });
-
-      setRecentPayments(formattedPayments);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {

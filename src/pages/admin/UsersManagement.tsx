@@ -19,8 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/lib/supabase";
-import { User, Enrollment, Payment } from "@/lib/supabase";
+import { api, User, Enrollment, Payment } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 interface UserWithDetails extends User {

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { supabase } from "../lib/supabase";
-import { Enrollment, Payment, Certificate, TrainingProgram } from "../lib/supabase";
+import { api, Enrollment, Payment, Certificate, TrainingProgram } from "../lib/api";
 import { UserLayout } from "../components/layout/UserLayout";
 import { 
   User, 
@@ -44,35 +43,44 @@ const Dashboard = () => {
     if (!user) return;
 
     try {
-      // Fetch enrollments with training programs
-      const { data: enrollments } = await supabase
-        .from('enrollments')
-        .select(`
-          *,
-          training_program:training_programs(*)
-        `)
-        .eq('user_id', user.id);
+      // Use backend API to fetch dashboard data
+      const dashboardResponse = await api.user.getDashboard();
+      const dashboard = dashboardResponse.data?.dashboard;
 
-      // Fetch payments
-      const { data: payments } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('user_id', user.id);
+      if (dashboard) {
+        // Map the dashboard data to match our component's expected structure
+        const enrollmentsWithPrograms = dashboard.recent_enrollments.map(enrollment => ({
+          ...enrollment,
+          training_program: {
+            id: enrollment.training_id,
+            title: enrollment.training_title,
+            description: enrollment.training_description,
+            duration: enrollment.duration,
+            price: enrollment.price,
+            is_active: true,
+            created_at: new Date().toISOString(),
+          }
+        }));
 
-      // Fetch certificates with training programs
-      const { data: certificates } = await supabase
-        .from('certificates')
-        .select(`
-          *,
-          training_program:training_programs(*)
-        `)
-        .eq('user_id', user.id);
+        const certificatesWithPrograms = dashboard.recent_certificates.map(cert => ({
+          ...cert,
+          training_program: {
+            id: cert.training_id,
+            title: cert.training_title,
+            description: '',
+            duration: '',
+            price: 0,
+            is_active: true,
+            created_at: new Date().toISOString(),
+          }
+        }));
 
-      setData({
-        enrollments: enrollments || [],
-        payments: payments || [],
-        certificates: certificates || []
-      });
+        setData({
+          enrollments: enrollmentsWithPrograms,
+          payments: dashboard.recent_payments,
+          certificates: certificatesWithPrograms
+        });
+      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {

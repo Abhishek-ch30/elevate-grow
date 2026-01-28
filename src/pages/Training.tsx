@@ -20,17 +20,7 @@ import {
   Shield
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/lib/supabase";
-
-interface TrainingProgram {
-  id: string;
-  title: string;
-  description: string;
-  duration: string;
-  price: number;
-  is_active: boolean;
-  created_at: string;
-}
+import { api, TrainingProgram } from "@/lib/api";
 
 interface TrainingWithEnrollments extends TrainingProgram {
   enrolled_count?: number;
@@ -72,21 +62,13 @@ const Training = () => {
   const fetchTrainings = async () => {
     try {
       setLoading(true);
-      const { data: trainingsData, error } = await supabase
-        .from('training_programs')
-        .select(`
-          *,
-          enrollments:enrollments(count)
-        `)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
+      const trainingsData = await api.getTrainingPrograms();
       
-      const trainingsWithCount = trainingsData?.map(training => ({
+      // Add enrolled count for each training (this would need to be added to the backend API)
+      const trainingsWithCount = trainingsData.map(training => ({
         ...training,
-        enrolled_count: training.enrollments?.length || 0
-      })) || [];
+        enrolled_count: 0 // This should come from the backend API
+      }));
       
       setTrainings(trainingsWithCount);
     } catch (error) {

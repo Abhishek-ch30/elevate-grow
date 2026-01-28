@@ -21,8 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase";
-import { Payment, User, TrainingProgram } from "@/lib/supabase";
+import { api, Payment, User, TrainingProgram } from "@/lib/api";
 
 interface PaymentWithDetails extends Payment {
   user: User;

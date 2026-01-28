@@ -19,8 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase";
-import { Certificate, User, TrainingProgram, Enrollment } from "@/lib/supabase";
+import { api, Certificate, User, TrainingProgram, Enrollment } from "@/lib/api";
 
 interface CertificateWithDetails extends Certificate {
   user: User;

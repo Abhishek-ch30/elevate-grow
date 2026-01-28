@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { supabase } from "../lib/supabase";
+import { api, Enrollment, TrainingProgram, Payment } from "../lib/api";
 import { UserLayout } from "../components/layout/UserLayout";
-import { Enrollment, TrainingProgram, Payment } from "../lib/supabase";
 import { 
   BookOpen, 
   Clock, 
@@ -22,6 +21,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 interface EnrolledProgram extends Enrollment {
   training_program: TrainingProgram;
+  training_title: string;
+  training_description?: string;
+  duration?: string;
+  price?: number;
   payment?: Payment;
 }
 
@@ -30,7 +33,7 @@ const EnrolledPrograms = () => {
   const [enrolledPrograms, setEnrolledPrograms] = useState<EnrolledProgram[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState<"all" | "enrolled" | "completed" | "pending">("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | "enrolled" | "completed" | "pending" | "pending_payment" | "pending_verification">("all");
 
   useEffect(() => {
     fetchEnrolledPrograms();
@@ -40,36 +43,24 @@ const EnrolledPrograms = () => {
     if (!user) return;
 
     try {
-      // Fetch enrollments with training programs and payments
-      const { data: enrollments, error } = await supabase
-        .from('enrollments')
-        .select(`
-          *,
-          training_program:training_programs(*)
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      // Fetch payments for each enrollment
-      const enrollmentsWithPayments = await Promise.all(
-        (enrollments || []).map(async (enrollment) => {
-          const { data: payment } = await supabase
-            .from('payments')
-            .select('*')
-            .eq('user_id', user.id)
-            .eq('training_id', enrollment.training_id)
-            .single();
-
-          return {
-            ...enrollment,
-            payment: payment || undefined
-          };
-        })
-      );
-
-      setEnrolledPrograms(enrollmentsWithPayments);
+      // Fetch enrollments from backend API
+      const enrollments = await api.getUserEnrollments();
+      
+      // Map the API response to match our EnrolledProgram interface
+      const mappedEnrollments = enrollments.map(enrollment => ({
+        ...enrollment,
+        training_program: {
+          id: enrollment.training_id,
+          title: enrollment.training_title,
+          description: enrollment.training_description,
+          duration: enrollment.duration,
+          price: enrollment.price,
+          is_active: true,
+          created_at: new Date().toISOString(),
+        } as TrainingProgram
+      })) as EnrolledProgram[];
+      
+      setEnrolledPrograms(mappedEnrollments);
     } catch (error) {
       console.error('Error fetching enrolled programs:', error);
     } finally {

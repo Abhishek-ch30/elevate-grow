@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { supabase } from "../lib/supabase";
+import { api, Certificate, TrainingProgram } from "../lib/api";
 import { UserLayout } from "../components/layout/UserLayout";
-import { Certificate, TrainingProgram } from "../lib/supabase";
 import { 
   Award, 
   Download, 
@@ -36,17 +35,23 @@ const Certificates = () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
-        .from('certificates')
-        .select(`
-          *,
-          training_program:training_programs(*)
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setCertificates(data || []);
+      const certificates = await api.getUserCertificates();
+      
+      // Map the API response to match our CertificateWithTraining interface
+      const mappedCertificates = certificates.map(cert => ({
+        ...cert,
+        training_program: {
+          id: cert.training_id,
+          title: cert.training_title,
+          description: '',
+          duration: '',
+          price: 0,
+          is_active: true,
+          created_at: new Date().toISOString(),
+        } as TrainingProgram
+      })) as CertificateWithTraining[];
+      
+      setCertificates(mappedCertificates);
     } catch (error) {
       console.error('Error fetching certificates:', error);
     } finally {
@@ -58,17 +63,23 @@ const Certificates = () => {
     if (!user) return [];
 
     try {
-      const { data, error } = await supabase
-        .from('enrollments')
-        .select(`
-          *,
-          training_program:training_programs(*)
-        `)
-        .eq('user_id', user.id)
-        .neq('status', 'completed');
-
-      if (error) throw error;
-      return data || [];
+      const enrollments = await api.getUserEnrollments();
+      
+      // Filter out completed enrollments and map to expected structure
+      return enrollments
+        .filter(enrollment => enrollment.status !== 'completed')
+        .map(enrollment => ({
+          ...enrollment,
+          training_program: {
+            id: enrollment.training_id,
+            title: enrollment.training_title,
+            description: enrollment.training_description,
+            duration: enrollment.duration,
+            price: enrollment.price,
+            is_active: true,
+            created_at: new Date().toISOString(),
+          } as TrainingProgram
+        }));
     } catch (error) {
       console.error('Error fetching enrolled programs:', error);
       return [];

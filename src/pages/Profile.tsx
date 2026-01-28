@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { supabase } from "../lib/supabase";
+import { api } from "../lib/api";
 import { UserLayout } from "../components/layout/UserLayout";
 import { User, Mail, Phone, Calendar, Lock, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,15 +28,8 @@ const Profile = () => {
     if (!user) return;
     
     try {
-      const { data, error } = await supabase
-        .from('certificates')
-        .select('id')
-        .eq('user_id', user.id)
-        .limit(1);
-
-      if (!error && data && data.length > 0) {
-        setHasCertificate(true);
-      }
+      const certificates = await api.getUserCertificates();
+      setHasCertificate(certificates.length > 0);
     } catch (error) {
       console.error('Error checking certificate status:', error);
     }
@@ -49,18 +42,11 @@ const Profile = () => {
     setMessage(null);
 
     try {
-      const { error } = await supabase
-        .from('users')
-        .update({ full_name: fullName.trim() })
-        .eq('id', user.id);
-
-      if (error) {
-        setMessage({ type: 'error', text: error.message || 'Failed to update name' });
-      } else {
-        setMessage({ type: 'success', text: 'Name updated successfully!' });
-        setOriginalName(fullName.trim());
-      }
+      await api.updateUserProfile({ full_name: fullName.trim() });
+      setMessage({ type: 'success', text: 'Name updated successfully!' });
+      setOriginalName(fullName.trim());
     } catch (error) {
+      console.error('Error updating profile:', error);
       setMessage({ type: 'error', text: 'Failed to update name' });
     }
 

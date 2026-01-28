@@ -1,181 +1,251 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { User as SupabaseUser, Session } from '@supabase/supabase-js'
-import { supabase } from '../lib/supabase'
-import { User } from '../lib/supabase'
-
-interface SignUpData {
-  email: string
-  password: string
-  fullName: string
-  phone?: number
-  profession: 'student' | 'professional'
-  college?: string
-  company?: string
-}
+import { 
+  apiClient, 
+  User, 
+  UserSignupData, 
+  AdminSignupData, 
+  LoginCredentials, 
+  ApiError 
+} from '../lib/api'
 
 interface AuthContextType {
-  user: SupabaseUser | null
-  userProfile: User | null
-  session: Session | null
+  user: User | null
   loading: boolean
-  signUp: (data: SignUpData, isAdmin?: boolean) => Promise<{ error: any }>
-  signIn: (email: string, password: string) => Promise<{ error: any }>
+  isAuthenticated: boolean
+  isAdmin: boolean
+  token: string | null
+  signUp: (data: UserSignupData) => Promise<{ error: any; user?: User; token?: string }>
+  adminSignUp: (data: AdminSignupData) => Promise<{ error: any; user?: User; token?: string }>
+  signIn: (credentials: LoginCredentials) => Promise<{ error: any; user?: User; token?: string }>
   signOut: () => Promise<void>
-  updateProfile: (updates: Partial<User>) => Promise<{ error: any }>
+  updateProfile: (updates: Partial<User>) => Promise<{ error: any; user?: User }>
+  changePassword: (currentPassword: string, newPassword: string) => Promise<{ error: any }>
+  refreshToken: () => Promise<{ error: any }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<SupabaseUser | null>(null)
-  const [userProfile, setUserProfile] = useState<User | null>(null)
-  const [session, setSession] = useState<Session | null>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [token, setToken] = useState<string | null>(null)
 
+  // Initialize authentication state on app load
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        fetchUserProfile(session.user.id)
-      }
-      setLoading(false)
-    })
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session)
-        setUser(session?.user ?? null)
-        
-        if (session?.user) {
-          await fetchUserProfile(session.user.id)
-        } else {
-          setUserProfile(null)
-        }
-        
-        setLoading(false)
-      }
-    )
-
-    return () => subscription.unsubscribe()
+    initializeAuth()
   }, [])
 
-  const fetchUserProfile = async (userId: string) => {
+  const initializeAuth = async () => {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single()
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching user profile:', error)
+      const storedToken = localStorage.getItem('qthink_solutions_token')
+      
+      if (!storedToken) {
+        setLoading(false)
         return
       }
 
-      setUserProfile(data)
-    } catch (error) {
-      console.error('Error fetching user profile:', error)
-    }
-  }
-
-  const signUp = async (data: SignUpData, isAdmin: boolean = false) => {
-    try {
-      console.log('Starting signup with data:', { email: data.email, profession: data.profession, isAdmin });
+      // Verify token with backend
+      const response = await apiClient.verifyToken()
       
-      // Validate required fields
-      if (!data.email || !data.password || !data.fullName) {
-        return { error: { message: 'Email, password, and full name are required' } }
+      if (response.status === 'success' && response.data?.user) {
+        setUser(response.data.user)
+        setToken(storedToken)
+      } else {
+        // Token is invalid, clear it
+        localStorage.removeItem('qthink_solutions_token')
       }
-
-      // Sign up the user with auth and include all metadata for the trigger function
-      // Include role information in both user_metadata and raw_user_meta_data
-      const { data: authData, error } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          data: {
-            full_name: data.fullName,
-            phone: data.phone?.toString() || '',
-            profession: data.profession,
-            college: data.college || '',
-            company: data.company || '',
-            role: isAdmin ? 'admin' : 'user',
-            is_admin: isAdmin,
-            // Add these for JWT claims
-            custom_claims: {
-              role: isAdmin ? 'admin' : 'user',
-              is_admin: isAdmin
-            }
-          }
-        }
-      })
-
-      if (error) {
-        console.error('Supabase auth error:', error)
-        return { error }
-      }
-
-      console.log('Auth signup successful:', authData)
-
-      // The trigger function will handle profile creation automatically
-      // No need for manual profile creation anymore
-
-      return { error: null }
     } catch (error) {
-      console.error('Unexpected error in signUp:', error)
-      return { error }
+      console.error('Error verifying token:', error)
+      localStorage.removeItem('qthink_solutions_token')
+    } finally {
+      setLoading(false)
     }
   }
 
-  const signIn = async (email: string, password: string) => {
+  const signUp = async (data: UserSignupData) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      })
-      return { error }
+      setLoading(true)
+      
+      const response = await apiClient.signup(data)
+      
+      if (response.status === 'success' && response.data) {
+        setUser(response.data.user)
+        setToken(response.data.token)
+        return { error: null, user: response.data.user, token: response.data.token }
+      } else {
+        return { error: { message: response.message || 'Signup failed' } }
+      }
     } catch (error) {
-      return { error }
+      console.error('Signup error:', error)
+      
+      if (error instanceof ApiError) {
+        return { error: { message: error.message } }
+      }
+      
+      return { error: { message: 'An unexpected error occurred during signup' } }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const adminSignUp = async (data: AdminSignupData) => {
+    try {
+      setLoading(true)
+      
+      const response = await apiClient.adminSignup(data)
+      
+      if (response.status === 'success' && response.data) {
+        setUser(response.data.user)
+        setToken(response.data.token)
+        return { error: null, user: response.data.user, token: response.data.token }
+      } else {
+        return { error: { message: response.message || 'Admin signup failed' } }
+      }
+    } catch (error) {
+      console.error('Admin signup error:', error)
+      
+      if (error instanceof ApiError) {
+        return { error: { message: error.message } }
+      }
+      
+      return { error: { message: 'An unexpected error occurred during admin signup' } }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const signIn = async (credentials: LoginCredentials) => {
+    try {
+      setLoading(true)
+      
+      const response = await apiClient.login(credentials)
+      
+      if (response.status === 'success' && response.data) {
+        setUser(response.data.user)
+        setToken(response.data.token)
+        return { error: null, user: response.data.user, token: response.data.token }
+      } else {
+        return { error: { message: response.message || 'Login failed' } }
+      }
+    } catch (error) {
+      console.error('Login error:', error)
+      
+      if (error instanceof ApiError) {
+        return { error: { message: error.message } }
+      }
+      
+      return { error: { message: 'An unexpected error occurred during login' } }
+    } finally {
+      setLoading(false)
     }
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    try {
+      await apiClient.logout()
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      setUser(null)
+      setToken(null)
+    }
   }
 
   const updateProfile = async (updates: Partial<User>) => {
-    if (!user) {
-      return { error: new Error('No user logged in') }
-    }
-
     try {
-      const { error } = await supabase
-        .from('users')
-        .update(updates)
-        .eq('id', user.id)
-
-      if (!error) {
-        setUserProfile(prev => prev ? { ...prev, ...updates } : null)
+      if (!user) {
+        return { error: { message: 'No user logged in' } }
       }
 
-      return { error }
+      const response = await apiClient.updateUserProfile(updates)
+      
+      if (response.status === 'success' && response.data?.profile) {
+        setUser(response.data.profile)
+        return { error: null, user: response.data.profile }
+      } else {
+        return { error: { message: response.message || 'Profile update failed' } }
+      }
     } catch (error) {
-      return { error }
+      console.error('Profile update error:', error)
+      
+      if (error instanceof ApiError) {
+        return { error: { message: error.message } }
+      }
+      
+      return { error: { message: 'An unexpected error occurred during profile update' } }
     }
   }
 
-  const value = {
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    try {
+      const response = await apiClient.changePassword({
+        currentPassword,
+        newPassword
+      })
+      
+      if (response.status === 'success') {
+        return { error: null }
+      } else {
+        return { error: { message: response.message || 'Password change failed' } }
+      }
+    } catch (error) {
+      console.error('Password change error:', error)
+      
+      if (error instanceof ApiError) {
+        return { error: { message: error.message } }
+      }
+      
+      return { error: { message: 'An unexpected error occurred during password change' } }
+    }
+  }
+
+  const refreshToken = async () => {
+    try {
+      const response = await apiClient.refreshToken()
+      
+      if (response.status === 'success' && response.data) {
+        setUser(response.data.user)
+        setToken(response.data.token)
+        return { error: null }
+      } else {
+        return { error: { message: response.message || 'Token refresh failed' } }
+      }
+    } catch (error) {
+      console.error('Token refresh error:', error)
+      
+      if (error instanceof ApiError) {
+        return { error: { message: error.message } }
+      }
+      
+      return { error: { message: 'An unexpected error occurred during token refresh' } }
+    }
+  }
+
+  // Auto-refresh token when it's close to expiry
+  useEffect(() => {
+    if (!token || !user) return
+
+    // Refresh token every 23 hours (assuming 24h expiry)
+    const refreshInterval = setInterval(() => {
+      refreshToken().catch(console.error)
+    }, 23 * 60 * 60 * 1000)
+
+    return () => clearInterval(refreshInterval)
+  }, [token, user])
+
+  const value: AuthContextType = {
     user,
-    userProfile,
-    session,
     loading,
+    isAuthenticated: !!user && !!token,
+    isAdmin: user?.role === 'admin' && user?.is_admin === true,
+    token,
     signUp,
+    adminSignUp,
     signIn,
     signOut,
-    updateProfile
+    updateProfile,
+    changePassword,
+    refreshToken
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
@@ -187,4 +257,32 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider')
   }
   return context
+}
+
+// Helper hook for admin-only components
+export function useRequireAuth() {
+  const auth = useAuth()
+  
+  useEffect(() => {
+    if (!auth.loading && !auth.isAuthenticated) {
+      // Redirect to login or show login modal
+      console.warn('Authentication required')
+    }
+  }, [auth.loading, auth.isAuthenticated])
+  
+  return auth
+}
+
+// Helper hook for admin-only components
+export function useRequireAdmin() {
+  const auth = useAuth()
+  
+  useEffect(() => {
+    if (!auth.loading && (!auth.isAuthenticated || !auth.isAdmin)) {
+      // Redirect to user dashboard or show error
+      console.warn('Admin access required')
+    }
+  }, [auth.loading, auth.isAuthenticated, auth.isAdmin])
+  
+  return auth
 }

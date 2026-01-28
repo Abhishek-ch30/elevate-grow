@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Mail, Lock, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -14,46 +14,30 @@ export default function AdminLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signIn } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // Sign in with Supabase
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { error, user } = await signIn({ email, password });
 
       if (error) {
-        throw error;
+        throw new Error(error.message);
       }
 
       // Check if user is admin
-      if (data.user) {
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('role, is_admin')
-          .eq('id', data.user.id)
-          .single();
-
-        if (userError) {
-          throw new Error('Failed to verify admin privileges');
-        }
-
-        if (!userData?.is_admin || userData?.role !== 'admin') {
-          // Sign out the user since they're not admin
-          await supabase.auth.signOut();
-          throw new Error('Access denied. Admin privileges required.');
-        }
-
-        toast({
-          title: "Login Successful",
-          description: "Welcome to Admin Dashboard",
-        });
-        navigate("/admin");
+      if (!user || user.role !== 'admin' || !user.is_admin) {
+        throw new Error('Access denied. Admin privileges required.');
       }
+
+      toast({
+        title: "Login Successful",
+        description: "Welcome to Admin Dashboard",
+      });
+      navigate("/admin");
+      
     } catch (error: any) {
       console.error('Admin login error:', error);
       toast({

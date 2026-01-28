@@ -5,7 +5,6 @@ import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Mail, Lock, ArrowRight, User, Phone, Building, GraduationCap, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "../contexts/AuthContext";
-import { supabase } from "../lib/supabase";
 
 const Signup = () => {
   const { signUp, user } = useAuth();
@@ -24,25 +23,6 @@ const Signup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  // Test Supabase connection on mount
-  useEffect(() => {
-    const testConnection = async () => {
-      try {
-        console.log('Testing Supabase connection...');
-        const { data, error } = await supabase.from('users').select('count').limit(1);
-        if (error) {
-          console.error('❌ Supabase connection failed:', error);
-        } else {
-          console.log('✅ Supabase connection successful');
-        }
-      } catch (err) {
-        console.error('❌ Connection test error:', err);
-      }
-    };
-    
-    testConnection();
-  }, []);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -64,15 +44,15 @@ const Signup = () => {
 
     setIsLoading(true);
     
-    const { error } = await signUp({
+    const { error, user } = await signUp({
+      full_name: formData.name,
       email: formData.email,
       password: formData.password,
-      fullName: formData.name,
       phone: formData.phone ? parseInt(formData.phone) : undefined,
       profession: formData.profession as 'student' | 'professional',
       college: formData.college || undefined,
       company: formData.company || undefined
-    }, false); // Regular user signup
+    });
     
     if (error) {
       toast({
@@ -83,9 +63,9 @@ const Signup = () => {
     } else {
       toast({
         title: "Account Created Successfully!",
-        description: "Please check your email to verify your account.",
+        description: "Welcome to ElevateGrow! You're now logged in.",
       });
-      navigate("/login");
+      navigate("/dashboard");
     }
     
     setIsLoading(false);

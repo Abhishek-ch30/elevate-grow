@@ -43,7 +43,7 @@ const Signup = () => {
     }
 
     setIsLoading(true);
-    
+
     const { error, user } = await signUp({
       full_name: formData.name,
       email: formData.email,
@@ -53,7 +53,7 @@ const Signup = () => {
       college: formData.college || undefined,
       company: formData.company || undefined
     });
-    
+
     if (error) {
       toast({
         title: "Signup Failed",
@@ -67,7 +67,7 @@ const Signup = () => {
       });
       navigate("/dashboard");
     }
-    
+
     setIsLoading(false);
   };
 
@@ -113,8 +113,8 @@ const Signup = () => {
       </div>
 
       {/* Centered Signup Card */}
-      <div className="relative z-10 flex items-center justify-center min-h-screen px-4">
-        <div className="w-full max-w-lg bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/15 shadow-2xl p-8 flex flex-col items-center gap-6">
+      <div className="relative z-10 flex items-center justify-center min-h-screen px-4 py-8">
+        <div className="w-full max-w-lg bg-white/5 backdrop-blur-xl rounded-3xl md:rounded-[2.5rem] border border-white/15 shadow-2xl p-6 md:p-8 flex flex-col items-center gap-6">
           {/* Logo & Heading */}
           <Link to="/" className="inline-flex items-center gap-2 mb-2">
             <img
@@ -218,16 +218,16 @@ const Signup = () => {
               </div>
             </div>
 
-              {/* Profession */}
-              <div>
-                <Label htmlFor="profession" className="text-white/80 text-sm mb-1 block">Profession *</Label>
-                <div className="flex items-center gap-3 bg-black/40 border border-cyan-500/30 rounded-lg px-3 py-1.5 focus-within:border-cyan-400">
-                  <Building className="w-5 h-5 text-white/60 flex-shrink-0" />
-                  <select
-                    id="profession"
-                    value={formData.profession}
-                    onChange={(e) => handleProfessionChange(e.target.value)}
-                    className="
+            {/* Profession */}
+            <div>
+              <Label htmlFor="profession" className="text-white/80 text-sm mb-1 block">Profession *</Label>
+              <div className="flex items-center gap-3 bg-black/40 border border-cyan-500/30 rounded-lg px-3 py-1.5 focus-within:border-cyan-400">
+                <Building className="w-5 h-5 text-white/60 flex-shrink-0" />
+                <select
+                  id="profession"
+                  value={formData.profession}
+                  onChange={(e) => handleProfessionChange(e.target.value)}
+                  className="
                       bg-transparent
                       border-none
                       text-white
@@ -240,14 +240,14 @@ const Signup = () => {
                       focus-visible:outline-none
                       focus-visible:ring-0
                       focus-visible:ring-offset-0 shadow-none focus:shadow-none focus-visible:shadow-none appearance-none"
-                    required
-                  >
-                    <option className="text-black" value="">Select profession</option>
-                    <option className="text-black" value="student">Student</option>
-                    <option className="text-black" value="professional">Professional</option>
-                  </select>
-                </div>
+                  required
+                >
+                  <option className="text-black" value="">Select profession</option>
+                  <option className="text-black" value="student">Student</option>
+                  <option className="text-black" value="professional">Professional</option>
+                </select>
               </div>
+            </div>
 
 
             {/* Dynamic College/Company */}
@@ -321,7 +321,7 @@ const Signup = () => {
                   placeholder="Create a strong password"
                   value={formData.password}
                   onChange={(e) => handleInputChange("password", e.target.value)}
-                 className="
+                  className="
                       bg-transparent
                       border-none
                       text-white

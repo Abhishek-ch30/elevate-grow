@@ -35,11 +35,11 @@ class ApiClient {
   }
 
   private async request<T>(
-    endpoint: string, 
+    endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseUrl}${endpoint}`;
-    
+
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -80,11 +80,11 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify(userData),
     });
-    
+
     if (response.data?.token) {
       this.saveToken(response.data.token);
     }
-    
+
     return {
       status: response.status,
       message: response.message || 'Signup successful',
@@ -92,33 +92,18 @@ class ApiClient {
     };
   }
 
-  async adminSignup(adminData: AdminSignupData): Promise<AuthResponse> {
-    const response = await this.request<{ user: User; token: string }>('/admin/signup', {
-      method: 'POST',
-      body: JSON.stringify(adminData),
-    });
-    
-    if (response.data?.token) {
-      this.saveToken(response.data.token);
-    }
-    
-    return {
-      status: response.status,
-      message: response.message || 'Admin signup successful',
-      data: response.data
-    };
-  }
+
 
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     const response = await this.request<{ user: User; token: string }>('/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
-    
+
     if (response.data?.token) {
       this.saveToken(response.data.token);
     }
-    
+
     return {
       status: response.status,
       message: response.message || 'Login successful',
@@ -142,11 +127,11 @@ class ApiClient {
     const response = await this.request<{ user: User; token: string }>('/refresh-token', {
       method: 'POST',
     });
-    
+
     if (response.data?.token) {
       this.saveToken(response.data.token);
     }
-    
+
     return {
       status: response.status,
       message: response.message || 'Token refreshed',
@@ -227,7 +212,7 @@ class ApiClient {
     if (filters?.role) queryParams.append('role', filters.role);
     if (filters?.profession) queryParams.append('profession', filters.profession);
     if (filters?.search) queryParams.append('search', filters.search);
-    
+
     const query = queryParams.toString();
     return this.request(`/admin/users${query ? `?${query}` : ''}`);
   }
@@ -265,7 +250,7 @@ class ApiClient {
     const queryParams = new URLSearchParams();
     if (filters?.status) queryParams.append('status', filters.status);
     if (filters?.userId) queryParams.append('userId', filters.userId);
-    
+
     const query = queryParams.toString();
     return this.request(`/admin/enrollments${query ? `?${query}` : ''}`);
   }
@@ -281,7 +266,7 @@ class ApiClient {
     const queryParams = new URLSearchParams();
     if (filters?.status) queryParams.append('status', filters.status);
     if (filters?.userId) queryParams.append('userId', filters.userId);
-    
+
     const query = queryParams.toString();
     return this.request(`/admin/payments${query ? `?${query}` : ''}`);
   }
@@ -304,7 +289,7 @@ class ApiClient {
     const queryParams = new URLSearchParams();
     if (filters?.userId) queryParams.append('userId', filters.userId);
     if (filters?.trainingId) queryParams.append('trainingId', filters.trainingId);
-    
+
     const query = queryParams.toString();
     return this.request(`/admin/certificates${query ? `?${query}` : ''}`);
   }
@@ -313,7 +298,7 @@ class ApiClient {
     const queryParams = new URLSearchParams();
     if (filters?.adminId) queryParams.append('adminId', filters.adminId);
     if (filters?.action) queryParams.append('action', filters.action);
-    
+
     const query = queryParams.toString();
     return this.request(`/admin/activity-logs${query ? `?${query}` : ''}`);
   }
@@ -613,7 +598,7 @@ export const apiClient = new ApiClient(API_BASE_URL);
 export const api = {
   auth: {
     signup: (data: UserSignupData) => apiClient.signup(data),
-    adminSignup: (data: AdminSignupData) => apiClient.adminSignup(data),
+
     login: (credentials: LoginCredentials) => apiClient.login(credentials),
     logout: () => apiClient.logout(),
     verifyToken: () => apiClient.verifyToken(),

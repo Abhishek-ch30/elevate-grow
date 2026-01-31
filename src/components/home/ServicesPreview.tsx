@@ -33,13 +33,13 @@ export function ServicesPreview() {
     <section className="py-20 bg-black relative overflow-hidden">
       {/* Circuit Board Pattern - Matching Landing Page */}
       <div className="absolute inset-0 circuit-board-bg opacity-30"></div>
-      
+
       {/* White Glass Overlay */}
       <div className="absolute inset-0 z-[5] pointer-events-none">
-        <div className="absolute inset-6 rounded-[2.5rem] bg-white/5 backdrop-blur-sm border border-white/10" />
+        <div className="absolute inset-1 md:inset-6 rounded-3xl md:rounded-[2.5rem] bg-white/5 backdrop-blur-sm border border-white/10" />
       </div>
-      
-      <div className="container mx-auto px-10 py-6 relative z-10">
+
+      <div className="container mx-auto px-3 sm:px-6 lg:px-8 py-6 relative z-10">
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-16">
           <span className="text-cyan-400 font-medium text-sm uppercase tracking-wider">What We Do</span>
@@ -52,44 +52,44 @@ export function ServicesPreview() {
         </div>
 
         {/* Services Grid */}
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-3 gap-4 md:gap-6">
           {services.map((service, index) => (
-        <div
-          key={service.title}
-          className={cn(
-            "group p-6 rounded-xl bg-black/40 backdrop-blur-md border-2 border-cyan-500/50 cursor-pointer transition-all duration-300",
-            "hover:border-cyan-400 hover:shadow-2xl hover:shadow-cyan-500/20",
-            "animate-fade-up",
-            index === 1 && "animation-delay-100",
-            index === 2 && "animation-delay-200"
-          )}
-          style={{ transform: 'scale(1)', transition: 'transform 0.3s ease' }}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-        >
+            <div
+              key={service.title}
+              className={cn(
+                "group p-4 sm:p-6 rounded-xl bg-black/40 backdrop-blur-md border-2 border-cyan-500/50 cursor-pointer transition-all duration-300",
+                "hover:border-cyan-400 hover:shadow-2xl hover:shadow-cyan-500/20",
+                "animate-fade-up",
+                index === 1 && "animation-delay-100",
+                index === 2 && "animation-delay-200"
+              )}
+              style={{ transform: 'scale(1)', transition: 'transform 0.3s ease' }}
+              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            >
 
 
-              <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center mb-4", service.color)}>
-                <service.icon className="w-7 h-7" />
+              <div className={cn("w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-3 sm:mb-4", service.color)}>
+                <service.icon className="w-6 h-6 sm:w-7 sm:h-7" />
               </div>
-              
-              <h3 className="text-xl font-semibold text-white mb-3 group-hover:text-cyan-400 transition-colors">
+
+              <h3 className="text-lg sm:text-xl font-semibold text-white mb-2 sm:mb-3 group-hover:text-cyan-400 transition-colors">
                 {service.title}
               </h3>
-              
-              <p className="text-gray-300 mb-6">
+
+              <p className="text-sm text-gray-300 mb-4 sm:mb-6 leading-relaxed">
                 {service.description}
               </p>
-              
-              <ul className="space-y-2 mb-4">
+
+              <ul className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
                 {service.features.map((feature) => (
-                  <li key={feature} className="flex items-center gap-2 text-sm text-gray-400">
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                  <li key={feature} className="flex items-center gap-2 text-xs sm:text-sm text-gray-400">
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 flex-shrink-0" />
                     {feature}
                   </li>
                 ))}
               </ul>
-              
+
               <Link
                 to="/services"
                 className="inline-flex items-center gap-2 text-sm font-medium text-cyan-400 group-hover:gap-3 transition-all"
@@ -103,7 +103,7 @@ export function ServicesPreview() {
 
         {/* CTA */}
         <div className="text-center mt-12">
-          <ModernButton 
+          <ModernButton
             text="View All Services"
             onClick={() => window.location.href = '/services'}
           />

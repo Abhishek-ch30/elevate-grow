@@ -3,8 +3,8 @@ import { AdminLayout } from "./AdminLayout";
 import { Button } from "@/components/ui/button";
 import ModernButton from "@/components/ui/ModernButton";
 import { Input } from "@/components/ui/input";
-import { 
-    Search, 
+import {
+    Search,
     Filter,
     CheckCircle2,
     XCircle,
@@ -24,8 +24,8 @@ import { useToast } from "@/hooks/use-toast";
 import { api, Payment, User, TrainingProgram } from "@/lib/api";
 
 interface PaymentWithDetails extends Payment {
-  user: User;
-  training_program: TrainingProgram;
+    user: User;
+    training_program: TrainingProgram;
 }
 
 const PaymentsManagement = () => {
@@ -43,17 +43,15 @@ const PaymentsManagement = () => {
     const fetchPayments = async () => {
         try {
             setLoading(true);
-            const { data: payments, error } = await supabase
-                .from('payments')
-                .select(`
-                    *,
-                    user:users(*),
-                    training_program:training_programs(*)
-                `)
-                .order('created_at', { ascending: false });
+            const response = await api.admin.getAllPayments();
 
-            if (error) throw error;
-            setPaymentsList(payments || []);
+            if (response.status === 'error') {
+                throw new Error(response.message);
+            }
+
+            // We need to map the backend response to match PaymentWithDetails interface if needed
+            // The backend returns user and training_program objects inside the payment objects already.
+            setPaymentsList((response.data?.payments as any[]) || []);
         } catch (error) {
             console.error('Error fetching payments:', error);
             toast({
@@ -68,22 +66,19 @@ const PaymentsManagement = () => {
 
     const filteredPayments = paymentsList.filter(payment => {
         const matchesSearch = payment.user?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                      payment.training_program?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                      payment.transaction_reference?.toLowerCase().includes(searchQuery.toLowerCase());
+            payment.training_program?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            payment.transaction_reference?.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesStatus = statusFilter === "all" || payment.status === statusFilter;
         return matchesSearch && matchesStatus;
     });
 
     const handleVerify = async (id: string) => {
         try {
-            const { error } = await supabase
-                .from('payments')
-                .update({ status: 'verified' })
-                .eq('id', id);
+            const response = await api.admin.updatePaymentStatus(id, 'verified');
 
-            if (error) throw error;
+            if (response.status === 'error') throw new Error(response.message);
 
-            setPaymentsList(prev => prev.map(p => 
+            setPaymentsList(prev => prev.map(p =>
                 p.id === id ? { ...p, status: "verified" } : p
             ));
             setSelectedPayment(null);
@@ -103,14 +98,11 @@ const PaymentsManagement = () => {
 
     const handleReject = async (id: string) => {
         try {
-            const { error } = await supabase
-                .from('payments')
-                .update({ status: 'failed' })
-                .eq('id', id);
+            const response = await api.admin.updatePaymentStatus(id, 'failed');
 
-            if (error) throw error;
+            if (response.status === 'error') throw new Error(response.message);
 
-            setPaymentsList(prev => prev.map(p => 
+            setPaymentsList(prev => prev.map(p =>
                 p.id === id ? { ...p, status: "failed" } : p
             ));
             setSelectedPayment(null);
@@ -261,16 +253,16 @@ const PaymentsManagement = () => {
                                                 <td className="px-6 py-4 text-sm font-mono text-muted-foreground">{payment.transaction_reference || 'N/A'}</td>
                                                 <td className="px-6 py-4">{getStatusBadge(payment.status)}</td>
                                                 <td className="px-6 py-4 text-sm text-muted-foreground">
-                                                    {new Date(payment.created_at).toLocaleDateString('en-IN', { 
-                                                        day: '2-digit', 
-                                                        month: '2-digit', 
+                                                    {new Date(payment.created_at).toLocaleDateString('en-IN', {
+                                                        day: '2-digit',
+                                                        month: '2-digit',
                                                         year: 'numeric',
                                                         hour: '2-digit',
                                                         minute: '2-digit'
                                                     })}
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
-                                                    <ModernButton 
+                                                    <ModernButton
                                                         text="View Details"
                                                         onClick={() => setSelectedPayment(payment)}
                                                     />
@@ -323,9 +315,9 @@ const PaymentsManagement = () => {
                                 <div className="flex justify-between py-2 border-b border-border">
                                     <span className="text-muted-foreground">Date</span>
                                     <span className="text-foreground">
-                                        {new Date(selectedPayment.created_at).toLocaleDateString('en-IN', { 
-                                            day: '2-digit', 
-                                            month: '2-digit', 
+                                        {new Date(selectedPayment.created_at).toLocaleDateString('en-IN', {
+                                            day: '2-digit',
+                                            month: '2-digit',
                                             year: 'numeric',
                                             hour: '2-digit',
                                             minute: '2-digit'
@@ -340,12 +332,12 @@ const PaymentsManagement = () => {
 
                             {selectedPayment.status === "pending_verification" && (
                                 <div className="flex gap-3 pt-4">
-                                    <ModernButton 
+                                    <ModernButton
                                         text="Reject"
                                         onClick={() => handleReject(selectedPayment.id)}
                                         className="flex-1"
                                     />
-                                    <ModernButton 
+                                    <ModernButton
                                         text="Verify"
                                         onClick={() => handleVerify(selectedPayment.id)}
                                         className="flex-1"

@@ -9,14 +9,14 @@ export function Footer() {
 
       {/* White Glass Overlay */}
       <div className="absolute inset-0 z-[5] pointer-events-none">
-        <div className="absolute inset-6 rounded-[2.5rem] bg-white/5 backdrop-blur-sm border border-white/10" />
+        <div className="absolute inset-1 md:inset-6 rounded-3xl md:rounded-[2.5rem] bg-white/5 backdrop-blur-sm border border-white/10" />
       </div>
 
       {/* Content */}
-      <div className="container mx-auto max-w-7xl px-12 py-12 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+      <div className="container mx-auto max-w-7xl px-6 md:px-12 py-8 md:py-12 relative z-10">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
           {/* Brand Column */}
-          <div className="space-y-4">
+          <div className="space-y-4 col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center gap-3">
               <img
                 src="https://i.ibb.co/wFJCHfcK/Screenshot-2026-01-21-121113.png"

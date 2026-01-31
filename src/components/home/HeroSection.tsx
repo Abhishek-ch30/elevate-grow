@@ -17,14 +17,14 @@ export function HeroSection() {
       {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-1/4 -left-20 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float" />
-<div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-accent/15 rounded-full blur-3xl animate-float animation-delay-500" />
+        <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-accent/15 rounded-full blur-3xl animate-float animation-delay-500" />
 
         <div className="absolute top-1/4 -left-20 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float" />
         <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-accent/15 rounded-full blur-3xl animate-float animation-delay-500" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial from-accent/5 to-transparent rounded-full" />
-        
+
         {/* Grid Pattern */}
-        <div 
+        <div
           className="absolute inset-0 opacity-5"
           style={{
             backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
@@ -33,80 +33,86 @@ export function HeroSection() {
           }}
         />
         <div className="absolute inset-0 z-[5] pointer-events-none">
-          <div className="absolute inset-6 rounded-[2.5rem] bg-white/5 backdrop-blur-sm border border-white/10" />
+          <div className="absolute inset-1 md:inset-6 rounded-3xl md:rounded-[2.5rem] bg-white/5 backdrop-blur-sm border border-white/10" />
         </div>
       </div>
 
-      <div className="container mx-auto max-w-7xl relative z-10">
+      <div className="container mx-auto max-w-7xl relative z-10 px-3 md:px-8">
         <div className="grid lg:grid-cols-2 gap-12 items-center min-h-[600px]">
           {/* Left Content */}
-          <div className="space-y-8">
+          <div className="space-y-8 mt-8 sm:mt-0">
             <div className="space-y-5">
               {/* Main Heading */}
-              <h1 className="text-1xl sm:text-2xl md:text-3xl lg:text-5xl font-bold text-white leading-tight animate-fade-up animation-delay-100" style={{ fontFamily: "'Nasalization', sans-serif" }}>
-                Building Tomorrow's
-                <span className="block hero-text-gradient">Technology Solutions</span>
+              <h1 className="text-lg sm:text-xl md:text-2xl lg:text-4xl font-black text-white leading-tight animate-fade-up animation-delay-100 font-orbitron tracking-tighter sm:tracking-tight">
+                <span className="whitespace-nowrap sm:whitespace-normal">Building Tomorrow's</span>
+                <span className="block hero-text-gradient mt-1 sm:mt-2 whitespace-nowrap sm:whitespace-normal">Technology Solutions</span>
               </h1>
 
               {/* Subheading */}
               <p className="text-lg md:text-xl text-white/70 leading-relaxed animate-fade-up animation-delay-200">
-                QThink Solutions delivers innovative digital products, strategic technology consulting, 
+                QThink Solutions delivers innovative digital products, strategic technology consulting,
                 and professional training programs that drive real business results.
               </p>
             </div>
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 animate-fade-up animation-delay-300">
-              <ModernButton 
+              <ModernButton
                 text="Explore Services"
                 onClick={() => window.location.href = '/services'}
               />
-              <ModernButton 
+              <ModernButton
                 text="View Training Programs"
                 onClick={() => window.location.href = '/training'}
               />
             </div>
 
             {/* Trust Indicators */}
-            <div className="grid grid-cols-3 gap-8 pt-3 border-t border-white/20 animate-fade-up animation-delay-400">
+            <div className="grid grid-cols-3 gap-3 sm:gap-8 pt-3 border-t border-white/20 animate-fade-up animation-delay-400">
               <div className="text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <Code2 className="w-5 h-5 text-accent" />
-                  <CountUp 
-                    to={50} 
-                    className="text-3xl md:text-4xl font-bold text-white"
-                    duration={2.5}
-                    delay={0.5}
-                  />
-                  <span className="text-3xl md:text-4xl font-bold text-white">+</span>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 mb-2">
+                  <Code2 className="w-4 h-4 sm:w-5 sm:h-5 text-accent" />
+                  <div className="flex items-center gap-0.5">
+                    <CountUp
+                      to={50}
+                      className="text-xl sm:text-3xl md:text-4xl font-bold text-white"
+                      duration={2.5}
+                      delay={0.5}
+                    />
+                    <span className="text-xl sm:text-3xl md:text-4xl font-bold text-white">+</span>
+                  </div>
                 </div>
-                <p className="text-sm text-white/60">Projects Delivered</p>
+                <p className="text-xs sm:text-sm text-white/60">Projects Delivered</p>
               </div>
               <div className="text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <Users className="w-5 h-5 text-accent" />
-                  <CountUp 
-                    to={500} 
-                    className="text-3xl md:text-4xl font-bold text-white"
-                    duration={2.5}
-                    delay={0.7}
-                  />
-                  <span className="text-3xl md:text-4xl font-bold text-white">+</span>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 mb-2">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5 text-accent" />
+                  <div className="flex items-center gap-0.5">
+                    <CountUp
+                      to={500}
+                      className="text-xl sm:text-3xl md:text-4xl font-bold text-white"
+                      duration={2.5}
+                      delay={0.7}
+                    />
+                    <span className="text-xl sm:text-3xl md:text-4xl font-bold text-white">+</span>
+                  </div>
                 </div>
-                <p className="text-sm text-white/60">Professionals Trained</p>
+                <p className="text-xs sm:text-sm text-white/60">Professionals Trained</p>
               </div>
               <div className="text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <Sparkles className="w-5 h-5 text-accent" />
-                  <CountUp 
-                    to={98} 
-                    className="text-3xl md:text-4xl font-bold text-white"
-                    duration={2.5}
-                    delay={0.9}
-                  />
-                  <span className="text-3xl md:text-4xl font-bold text-white">%</span>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 mb-2">
+                  <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-accent" />
+                  <div className="flex items-center gap-0.5">
+                    <CountUp
+                      to={98}
+                      className="text-xl sm:text-3xl md:text-4xl font-bold text-white"
+                      duration={2.5}
+                      delay={0.9}
+                    />
+                    <span className="text-xl sm:text-3xl md:text-4xl font-bold text-white">%</span>
+                  </div>
                 </div>
-                <p className="text-sm text-white/60">Client Satisfaction</p>
+                <p className="text-xs sm:text-sm text-white/60">Client Satisfaction</p>
               </div>
             </div>
           </div>

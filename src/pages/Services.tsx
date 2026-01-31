@@ -2,12 +2,12 @@ import { PageLayout } from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import ModernButton from "@/components/ui/ModernButton";
-import { 
-  Code2, 
-  Lightbulb, 
-  Palette, 
-  Cloud, 
-  Smartphone, 
+import {
+  Code2,
+  Lightbulb,
+  Palette,
+  Cloud,
+  Smartphone,
   Database,
   ArrowRight,
   CheckCircle2
@@ -122,82 +122,82 @@ const Services = () => {
         </div>
 
         {/* 🔥 SINGLE GLASS OVERLAY */}
-        <div className="container mx-auto max-w-7xl relative z-10 px-4 sm:px-6 lg:px-8 mt-8">
-          <div className="bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/15 shadow-2xl p-8 sm:p-12 lg:p-16">
+        <div className="container mx-auto max-w-7xl relative z-10 px-3 sm:px-6 lg:px-8 mt-8">
+          <div className="bg-white/5 backdrop-blur-xl rounded-3xl md:rounded-[2.5rem] border border-white/15 shadow-2xl p-6 sm:p-12 lg:p-16">
 
-          {/* HERO */}
-          <section className="mb-24">
-            <span className="text-accent text-sm uppercase tracking-wider">
-              Our Services
-            </span>
-            <h1
-              className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mt-4 mb-6"
-              style={{ fontFamily: "'Nasalization', sans-serif" }}
-            >
-              Comprehensive Technology{" "}
-              <span className="hero-text-gradient">Solutions</span>
-            </h1>
-            <p className="text-lg text-white/70 max-w-3xl">
-              From concept to launch and beyond, we provide end-to-end services to help you build, scale, and succeed in the digital landscape.
-            </p>
-          </section>
-          {/* SERVICES GRID */}
-          <section className="mb-24">
-            <div className="grid lg:grid-cols-2 gap-8">
-            {services.map((service, index) => (
-              <div
-                key={service.title}
-                className="p-8 rounded-xl bg-black/40 backdrop-blur-md border-2 border-cyan-500/50 cursor-pointer transition-all duration-300 hover:border-cyan-400 hover:shadow-2xl hover:shadow-cyan-500/20"
-                style={{ transform: 'scale(1)', transition: 'transform 0.3s ease' }}
-                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            {/* HERO */}
+            <section className="mb-16 md:mb-24">
+              <span className="text-accent text-sm uppercase tracking-wider">
+                Our Services
+              </span>
+              <h1
+                className="text-3xl md:text-5xl lg:text-6xl font-bold text-white mt-4 mb-6"
+                style={{ fontFamily: "'Nasalization', sans-serif" }}
               >
-                <div className="flex items-start gap-5">
-                  <div className={cn("w-14 h-14 rounded-xl flex items-center justify-center shrink-0", service.color)}>
-                    <service.icon className="w-7 h-7" />
+                Comprehensive Technology{" "}
+                <span className="hero-text-gradient">Solutions</span>
+              </h1>
+              <p className="text-base md:text-lg text-white/70 max-w-3xl">
+                From concept to launch and beyond, we provide end-to-end services to help you build, scale, and succeed in the digital landscape.
+              </p>
+            </section>
+            {/* SERVICES GRID */}
+            <section className="mb-16 md:mb-24">
+              <div className="grid lg:grid-cols-2 gap-6 md:gap-8">
+                {services.map((service, index) => (
+                  <div
+                    key={service.title}
+                    className="p-5 sm:p-8 rounded-xl bg-black/40 backdrop-blur-md border-2 border-cyan-500/50 cursor-pointer transition-all duration-300 hover:border-cyan-400 hover:shadow-2xl hover:shadow-cyan-500/20"
+                    style={{ transform: 'scale(1)', transition: 'transform 0.3s ease' }}
+                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                  >
+                    <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-5">
+                      <div className={cn("w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center shrink-0", service.color)}>
+                        <service.icon className="w-6 h-6 sm:w-7 sm:h-7" />
+                      </div>
+                      <div className="flex-1 w-full">
+                        <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-cyan-400 transition-colors">
+                          {service.title}
+                        </h3>
+                        <p className="text-sm sm:text-base text-white/70 mb-4 sm:mb-6">
+                          {service.description}
+                        </p>
+                        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                          {service.features.map((feature) => (
+                            <li key={feature} className="flex items-center gap-2 text-xs sm:text-sm text-white/60">
+                              <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400 shrink-0" />
+                              {feature}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-cyan-400 transition-colors">
-                      {service.title}
-                    </h3>
-                    <p className="text-white/70 mb-6">
-                      {service.description}
-                    </p>
-                    <ul className="grid grid-cols-2 gap-3">
-                      {service.features.map((feature) => (
-                        <li key={feature} className="flex items-center gap-2 text-sm text-white/60">
-                          <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                ))}
+              </div>
+            </section>
+            {/* CTA SECTION */}
+            <section>
+              <div className="text-center">
+                <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+                  Ready to Start Your Project?
+                </h2>
+                <p className="text-white/70 mb-8 max-w-2xl mx-auto">
+                  Let's discuss how we can help bring your vision to life. Our team is ready to understand your needs and propose the best solution.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <ModernButton
+                    text="Get a Free Consultation"
+                    onClick={() => window.location.href = '/contact'}
+                  />
+                  <ModernButton
+                    text="Explore Training Programs"
+                    onClick={() => window.location.href = '/training'}
+                  />
                 </div>
               </div>
-            ))}
-          </div>
-          </section>
-          {/* CTA SECTION */}
-          <section>
-            <div className="text-center">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                Ready to Start Your Project?
-              </h2>
-              <p className="text-white/70 mb-8 max-w-2xl mx-auto">
-                Let's discuss how we can help bring your vision to life. Our team is ready to understand your needs and propose the best solution.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <ModernButton 
-                  text="Get a Free Consultation"
-                  onClick={() => window.location.href = '/contact'}
-                />
-                <ModernButton 
-                  text="Explore Training Programs"
-                  onClick={() => window.location.href = '/training'}
-                />
-              </div>
-            </div>
-          </section>
+            </section>
           </div>
         </div>
       </div>

@@ -2,14 +2,14 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { api, Enrollment, Payment, Certificate, TrainingProgram } from "../lib/api";
 import { UserLayout } from "../components/layout/UserLayout";
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  BookOpen, 
-  Clock, 
-  CheckCircle, 
-  AlertCircle, 
+import {
+  User,
+  Mail,
+  Phone,
+  BookOpen,
+  Clock,
+  CheckCircle,
+  AlertCircle,
   Download,
   IndianRupee,
   CreditCard,
@@ -119,7 +119,7 @@ const Dashboard = () => {
       color: "text-blue-600 bg-blue-500/10 dark:text-blue-400 dark:bg-blue-900/20",
     },
     {
-      label: "Completed Programs", 
+      label: "Completed Programs",
       value: data.enrollments.filter(e => e.status === 'completed').length.toString(),
       icon: CheckCircle,
       color: "text-green-600 bg-green-500/10 dark:text-green-400 dark:bg-green-900/20",
@@ -194,7 +194,7 @@ const Dashboard = () => {
             ) : (
               <div className="space-y-4">
                 {data.enrollments.map((enrollment) => (
-                  <div key={enrollment.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div key={enrollment.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg gap-4">
                     <div className="flex-1">
                       <h3 className="font-medium">{enrollment.training_program.title}</h3>
                       <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
@@ -230,7 +230,7 @@ const Dashboard = () => {
             ) : (
               <div className="space-y-4">
                 {data.payments.map((payment) => (
-                  <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div key={payment.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg gap-4">
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2">
                         <IndianRupee className="w-5 h-5 text-green-600" />

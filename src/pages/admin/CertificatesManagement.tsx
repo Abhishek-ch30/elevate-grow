@@ -3,8 +3,8 @@ import { AdminLayout } from "./AdminLayout";
 import { Button } from "@/components/ui/button";
 import ModernButton from "@/components/ui/ModernButton";
 import { Input } from "@/components/ui/input";
-import { 
-  Search, 
+import {
+  Search,
   Award,
   Download,
   Eye,
@@ -51,50 +51,63 @@ const CertificatesManagement = () => {
   const fetchCertificates = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch issued certificates
-      const { data: issuedCertificates, error: issuedError } = await supabase
-        .from('certificates')
-        .select(`
-          *,
-          user:users(*),
-          training_program:training_programs(*)
-        `)
-        .order('created_at', { ascending: false });
+      const certResponse = await api.admin.getAllCertificates();
+      if (certResponse.status === 'error') throw new Error(certResponse.message);
+      const issuedCertificates = certResponse.data?.certificates || [];
 
-      if (issuedError) throw issuedError;
-
-      // Fetch completed enrollments without certificates (eligible for certificates)
-      const { data: completedEnrollments, error: enrollmentError } = await supabase
-        .from('enrollments')
-        .select(`
-          user_id,
-          training_id,
-          user:users(*),
-          training_program:training_programs(*)
-        `)
-        .eq('status', 'completed');
-
-      if (enrollmentError) throw enrollmentError;
+      // Fetch completed enrollments
+      const enrollResponse = await api.admin.getAllEnrollments({ status: 'completed' });
+      if (enrollResponse.status === 'error') throw new Error(enrollResponse.message);
+      const completedEnrollments = enrollResponse.data?.enrollments || [];
 
       // Get existing certificate user-training pairs
       const existingPairs = new Set(
-        issuedCertificates?.map(cert => `${cert.user_id}-${cert.training_id}`) || []
+        issuedCertificates.map(cert => `${cert.user_id}-${cert.training_id}`)
       );
 
       // Filter out completed enrollments that already have certificates
-      const eligibleCertificates: EligibleCertificate[] = (completedEnrollments || [])
+      const eligibleCertificates: EligibleCertificate[] = completedEnrollments
         .filter(enrollment => !existingPairs.has(`${enrollment.user_id}-${enrollment.training_id}`))
         .map(enrollment => ({
           user_id: enrollment.user_id,
           training_id: enrollment.training_id,
-          user: enrollment.user,
-          training_program: enrollment.training_program,
+          // Since enrollment response has flat fields for user name etc (based on admin.service.js getAllEnrollments),
+          // we need to reconstruct the objects expected by the interface or cast them.
+          // The backend returns: user_id, full_name, email, training_id, training_title, price.
+          // But our frontend interface expects nested `user` and `training_program` objects.
+          // We need to map them.
+          user: {
+            id: enrollment.user_id,
+            full_name: (enrollment as any).full_name,
+            email: (enrollment as any).email
+          } as User,
+          training_program: {
+            id: enrollment.training_id,
+            title: (enrollment as any).training_title,
+            price: (enrollment as any).price
+          } as TrainingProgram,
           status: 'eligible' as const
         }));
 
+      // Similarly map issued certificates because backend service flattens them too
+      const mappedIssuedCertificates = issuedCertificates.map(cert => ({
+        ...cert,
+        user: {
+          id: cert.user_id,
+          full_name: (cert as any).full_name,
+          email: (cert as any).email
+        } as User,
+        training_program: {
+          id: cert.training_id,
+          title: (cert as any).training_title
+        } as TrainingProgram,
+        status: 'issued'
+      }));
+
       const allCertificates: CertificateItem[] = [
-        ...(issuedCertificates || []),
+        ...mappedIssuedCertificates as any,
         ...eligibleCertificates
       ];
 
@@ -115,34 +128,32 @@ const CertificatesManagement = () => {
     const user = 'user' in cert ? cert.user.full_name : cert.user.full_name;
     const training = 'training_program' in cert ? cert.training_program.title : cert.training_program.title;
     const certId = 'certificate_id' in cert ? cert.certificate_id : null;
-    
+
     const matchesSearch = user?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          training?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          (certId && certId.toLowerCase().includes(searchQuery.toLowerCase()));
-    
+      training?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (certId && certId.toLowerCase().includes(searchQuery.toLowerCase()));
+
     const matchesStatus = statusFilter === "all" || cert.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   const handleIssueCertificate = async (userId: string, trainingId: string) => {
     try {
-      // Generate unique certificate ID
-      const certificateId = `CERT-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`;
-      
-      const { error } = await supabase
-        .from('certificates')
-        .insert({
-          certificate_id: certificateId,
-          user_id: userId,
-          training_id: trainingId,
-          issue_date: new Date().toISOString().split('T')[0]
-        });
+      // Generate unique certificate ID handled by backend
 
-      if (error) throw error;
+      const response = await api.admin.createCertificate({
+        user_id: userId,
+        training_id: trainingId,
+        issue_date: new Date().toISOString().split('T')[0]
+      });
+
+      if (response.status === 'error') throw new Error(response.message);
+
+      const certificateId = response.data?.certificate?.certificate_id;
 
       // Refresh certificates list
       await fetchCertificates();
-      
+
       setSelectedCertificate(null);
       toast({
         title: "Certificate Issued",
@@ -251,7 +262,7 @@ const CertificatesManagement = () => {
                     const training = 'training_program' in cert ? cert.training_program : cert.training_program;
                     const certId = 'certificate_id' in cert ? cert.certificate_id : null;
                     const issueDate = 'issue_date' in cert ? cert.issue_date : null;
-                    
+
                     return (
                       <tr key={certId || `${cert.user_id}-${cert.training_id}`} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                         <td className="px-6 py-4">
@@ -297,7 +308,7 @@ const CertificatesManagement = () => {
                               </Button>
                             </div>
                           ) : (
-                            <ModernButton 
+                            <ModernButton
                               text="Issue"
                               onClick={() => setSelectedCertificate(cert)}
                             />
@@ -308,7 +319,7 @@ const CertificatesManagement = () => {
                   })}
                 </tbody>
               </table>
-              
+
               {filteredCertificates.length === 0 && (
                 <div className="p-8 text-center text-muted-foreground">
                   No certificates found matching your criteria.
@@ -348,7 +359,7 @@ const CertificatesManagement = () => {
                   CERT-{new Date().getFullYear()}-{Date.now().toString().slice(-6)}
                 </p>
               </div>
-              <ModernButton 
+              <ModernButton
                 text="Generate & Issue Certificate"
                 onClick={() => {
                   if ('user_id' in selectedCertificate) {

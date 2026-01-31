@@ -1,9 +1,9 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { 
-  LayoutDashboard, 
-  BookOpen, 
-  CreditCard, 
+import {
+  LayoutDashboard,
+  BookOpen,
+  CreditCard,
   Award,
   Menu,
   X,
@@ -121,7 +121,7 @@ export function UserLayout({ children }: UserLayoutProps) {
 
         {/* Footer */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-sidebar-border">
-          <ModernButton 
+          <ModernButton
             text="Logout"
             onClick={handleLogout}
             className="w-full justify-start"
@@ -139,7 +139,7 @@ export function UserLayout({ children }: UserLayoutProps) {
 
       {/* Main Content */}
       <main className="lg:ml-64 pt-16 lg:pt-0 min-h-screen">
-        <div className="p-6 lg:p-8">{children}</div>
+        <div className="p-4 lg:p-8">{children}</div>
       </main>
     </div>
   );

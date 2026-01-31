@@ -1,21 +1,22 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { 
-  apiClient, 
-  User, 
-  UserSignupData, 
-  AdminSignupData, 
-  LoginCredentials, 
-  ApiError 
+import {
+  apiClient,
+  User,
+  UserSignupData,
+  AdminSignupData,
+  LoginCredentials,
+  ApiError
 } from '../lib/api'
 
 interface AuthContextType {
   user: User | null
+  userProfile: User | null
   loading: boolean
   isAuthenticated: boolean
   isAdmin: boolean
   token: string | null
   signUp: (data: UserSignupData) => Promise<{ error: any; user?: User; token?: string }>
-  adminSignUp: (data: AdminSignupData) => Promise<{ error: any; user?: User; token?: string }>
+
   signIn: (credentials: LoginCredentials) => Promise<{ error: any; user?: User; token?: string }>
   signOut: () => Promise<void>
   updateProfile: (updates: Partial<User>) => Promise<{ error: any; user?: User }>
@@ -38,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const initializeAuth = async () => {
     try {
       const storedToken = localStorage.getItem('qthink_solutions_token')
-      
+
       if (!storedToken) {
         setLoading(false)
         return
@@ -46,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Verify token with backend
       const response = await apiClient.verifyToken()
-      
+
       if (response.status === 'success' && response.data?.user) {
         setUser(response.data.user)
         setToken(storedToken)
@@ -65,9 +66,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (data: UserSignupData) => {
     try {
       setLoading(true)
-      
+
       const response = await apiClient.signup(data)
-      
+
       if (response.status === 'success' && response.data) {
         setUser(response.data.user)
         setToken(response.data.token)
@@ -77,49 +78,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Signup error:', error)
-      
+
       if (error instanceof ApiError) {
         return { error: { message: error.message } }
       }
-      
+
       return { error: { message: 'An unexpected error occurred during signup' } }
     } finally {
       setLoading(false)
     }
   }
 
-  const adminSignUp = async (data: AdminSignupData) => {
-    try {
-      setLoading(true)
-      
-      const response = await apiClient.adminSignup(data)
-      
-      if (response.status === 'success' && response.data) {
-        setUser(response.data.user)
-        setToken(response.data.token)
-        return { error: null, user: response.data.user, token: response.data.token }
-      } else {
-        return { error: { message: response.message || 'Admin signup failed' } }
-      }
-    } catch (error) {
-      console.error('Admin signup error:', error)
-      
-      if (error instanceof ApiError) {
-        return { error: { message: error.message } }
-      }
-      
-      return { error: { message: 'An unexpected error occurred during admin signup' } }
-    } finally {
-      setLoading(false)
-    }
-  }
+
 
   const signIn = async (credentials: LoginCredentials) => {
     try {
       setLoading(true)
-      
+
       const response = await apiClient.login(credentials)
-      
+
       if (response.status === 'success' && response.data) {
         setUser(response.data.user)
         setToken(response.data.token)
@@ -129,11 +106,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Login error:', error)
-      
+
       if (error instanceof ApiError) {
         return { error: { message: error.message } }
       }
-      
+
       return { error: { message: 'An unexpected error occurred during login' } }
     } finally {
       setLoading(false)
@@ -158,7 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const response = await apiClient.updateUserProfile(updates)
-      
+
       if (response.status === 'success' && response.data?.profile) {
         setUser(response.data.profile)
         return { error: null, user: response.data.profile }
@@ -167,11 +144,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Profile update error:', error)
-      
+
       if (error instanceof ApiError) {
         return { error: { message: error.message } }
       }
-      
+
       return { error: { message: 'An unexpected error occurred during profile update' } }
     }
   }
@@ -182,7 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         currentPassword,
         newPassword
       })
-      
+
       if (response.status === 'success') {
         return { error: null }
       } else {
@@ -190,11 +167,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Password change error:', error)
-      
+
       if (error instanceof ApiError) {
         return { error: { message: error.message } }
       }
-      
+
       return { error: { message: 'An unexpected error occurred during password change' } }
     }
   }
@@ -202,7 +179,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshToken = async () => {
     try {
       const response = await apiClient.refreshToken()
-      
+
       if (response.status === 'success' && response.data) {
         setUser(response.data.user)
         setToken(response.data.token)
@@ -212,11 +189,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Token refresh error:', error)
-      
+
       if (error instanceof ApiError) {
         return { error: { message: error.message } }
       }
-      
+
       return { error: { message: 'An unexpected error occurred during token refresh' } }
     }
   }
@@ -240,12 +217,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAdmin: user?.role === 'admin' && user?.is_admin === true,
     token,
     signUp,
-    adminSignUp,
+
     signIn,
     signOut,
     updateProfile,
     changePassword,
-    refreshToken
+    refreshToken,
+    userProfile: user
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
@@ -262,27 +240,27 @@ export function useAuth() {
 // Helper hook for admin-only components
 export function useRequireAuth() {
   const auth = useAuth()
-  
+
   useEffect(() => {
     if (!auth.loading && !auth.isAuthenticated) {
       // Redirect to login or show login modal
       console.warn('Authentication required')
     }
   }, [auth.loading, auth.isAuthenticated])
-  
+
   return auth
 }
 
 // Helper hook for admin-only components
 export function useRequireAdmin() {
   const auth = useAuth()
-  
+
   useEffect(() => {
     if (!auth.loading && (!auth.isAuthenticated || !auth.isAdmin)) {
       // Redirect to user dashboard or show error
       console.warn('Admin access required')
     }
   }, [auth.loading, auth.isAuthenticated, auth.isAdmin])
-  
+
   return auth
 }

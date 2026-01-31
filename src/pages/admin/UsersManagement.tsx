@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import ModernButton from "@/components/ui/ModernButton";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Search, 
+import {
+  Search,
   Filter,
   MoreHorizontal,
   Mail,
@@ -41,30 +41,28 @@ const UsersManagement = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const { data: users, error } = await supabase
-        .from('users')
-        .select(`
-          *,
-          enrollments:enrollments(count),
-          payments:payments(status)
-        `)
-        .order('created_at', { ascending: false });
+      const response = await api.admin.getAllUsers({
+        search: searchQuery
+      });
 
-      if (error) throw error;
+      if (response.status === 'error') {
+        throw new Error(response.message);
+      }
 
-      const usersWithDetails: UserWithDetails[] = users?.map(user => {
-        const enrollmentsCount = user.enrollments?.length || 0;
-        const latestPayment = user.payments?.sort((a, b) => 
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        )[0];
-        
+      const users = response.data?.users || [];
+
+      const usersWithDetails: UserWithDetails[] = users.map(user => {
+        // Since we don't have enrollments/payments included in the basic list yet,
+        // we'll default these to 0/none. 
+        // Real implementation should update getAllUsers to include counts if needed,
+        // or fetch details separately. For now, showing basic user list.
         return {
           ...user,
-          enrollments_count: enrollmentsCount,
-          latest_payment_status: latestPayment?.status || 'none',
-          user_type: enrollmentsCount > 2 ? 'Professional' : 'Student'
+          enrollments_count: 0,
+          latest_payment_status: 'none',
+          user_type: user.profession === 'professional' ? 'Professional' : 'Student'
         };
-      }) || [];
+      });
 
       setUsersList(usersWithDetails);
     } catch (error) {
@@ -79,7 +77,7 @@ const UsersManagement = () => {
     }
   };
 
-  const filteredUsers = usersList.filter(user => 
+  const filteredUsers = usersList.filter(user =>
     user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -106,9 +104,9 @@ const UsersManagement = () => {
               className="pl-10"
             />
           </div>
-          <ModernButton 
+          <ModernButton
             text="Filters"
-            onClick={() => {}}
+            onClick={() => { }}
           />
         </div>
 
@@ -177,19 +175,19 @@ const UsersManagement = () => {
                         ) : (
                           <span className={cn(
                             "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium",
-                            user.latest_payment_status === "verified" 
-                              ? "bg-green-500/10 text-green-600" 
+                            user.latest_payment_status === "verified"
+                              ? "bg-green-500/10 text-green-600"
                               : user.latest_payment_status === "pending_verification"
-                              ? "bg-amber-500/10 text-amber-600"
-                              : "bg-red-500/10 text-red-600"
+                                ? "bg-amber-500/10 text-amber-600"
+                                : "bg-red-500/10 text-red-600"
                           )}>
                             <span className={cn(
                               "w-1.5 h-1.5 rounded-full",
-                              user.latest_payment_status === "verified" ? "bg-green-500" : 
-                              user.latest_payment_status === "pending_verification" ? "bg-amber-500" : "bg-red-500"
+                              user.latest_payment_status === "verified" ? "bg-green-500" :
+                                user.latest_payment_status === "pending_verification" ? "bg-amber-500" : "bg-red-500"
                             )} />
-                            {user.latest_payment_status === "verified" ? "Verified" : 
-                             user.latest_payment_status === "pending_verification" ? "Pending" : "Failed"}
+                            {user.latest_payment_status === "verified" ? "Verified" :
+                              user.latest_payment_status === "pending_verification" ? "Pending" : "Failed"}
                           </span>
                         )}
                       </td>
@@ -214,7 +212,7 @@ const UsersManagement = () => {
                   ))}
                 </tbody>
               </table>
-              
+
               {filteredUsers.length === 0 && (
                 <div className="p-8 text-center text-muted-foreground">
                   No users found matching your search.

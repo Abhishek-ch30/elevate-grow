@@ -42,13 +42,13 @@ export function TrainingPreview() {
     <section className="py-24 bg-black relative overflow-hidden">
       {/* Circuit Board Pattern - Matching Other Sections */}
       <div className="absolute inset-0 circuit-board-bg opacity-30"></div>
-      
+
       {/* White Glass Overlay */}
       <div className="absolute inset-0 z-[5] pointer-events-none">
-        <div className="absolute inset-6 rounded-[2.5rem] bg-white/5 backdrop-blur-sm border border-white/10" />
+        <div className="absolute inset-1 md:inset-6 rounded-3xl md:rounded-[2.5rem] bg-white/5 backdrop-blur-sm border border-white/10" />
       </div>
-      
-      <div className="container mx-auto px-10 py-6 relative z-10">
+
+      <div className="container mx-auto px-3 sm:px-6 lg:px-8 py-6 relative z-10">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12">
           <div>
@@ -63,7 +63,7 @@ export function TrainingPreview() {
         </div>
 
         {/* Training Cards */}
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-3 gap-4 md:gap-8">
           {featuredTrainings.map((training, index) => (
             <Link
               key={training.id}
@@ -71,7 +71,7 @@ export function TrainingPreview() {
               className="group animate-fade-up"
               style={{ animationDelay: `${index * 100}ms` }}
             >
-              <div className="h-full bg-black/40 backdrop-blur-md rounded-2xl p-8 shadow-sm border-2 border-cyan-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/20 hover:border-cyan-400"
+              <div className="h-full bg-black/40 backdrop-blur-md rounded-2xl p-5 sm:p-8 shadow-sm border-2 border-cyan-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/20 hover:border-cyan-400"
                 style={{ transform: 'scale(1)', transition: 'transform 0.3s ease' }}
                 onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
                 onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
@@ -85,7 +85,7 @@ export function TrainingPreview() {
                 </div>
 
                 {/* Content */}
-                <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-cyan-400 transition-colors">
+                <h3 className="text-lg sm:text-xl font-semibold text-white mb-2 group-hover:text-cyan-400 transition-colors">
                   {training.title}
                 </h3>
                 <p className="text-gray-300 text-sm mb-6 line-clamp-2">

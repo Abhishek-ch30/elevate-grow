@@ -16,6 +16,7 @@ import {
   Twitter
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { api, ContactFormData } from "@/lib/api";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -60,16 +61,36 @@ const Contact = () => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    toast({
-      title: "Message Sent!",
-      description: "We'll get back to you within 24 hours.",
-    });
-    
-    setFormData({ name: "", email: "", subject: "", message: "" });
-    setIsSubmitting(false);
+    try {
+      const contactData: ContactFormData = {
+        full_name: formData.name,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+      };
+
+      const response = await api.contact.submitForm(contactData);
+      
+      if (response.status === 'success') {
+        toast({
+          title: "Message Sent!",
+          description: "We'll get back to you within 24 hours.",
+        });
+        
+        setFormData({ name: "", email: "", subject: "", message: "" });
+      } else {
+        throw new Error(response.message || 'Failed to send message');
+      }
+    } catch (error: any) {
+      console.error('Contact form submission error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

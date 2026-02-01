@@ -172,6 +172,30 @@ class ApiClient {
     });
   }
 
+  async createEnrollmentWithDetails(enrollmentData: CreateEnrollmentWithDetailsData): Promise<ApiResponse<{ enrollment: EnrollmentWithTraining }>> {
+    return this.request('/user/enrollments', {
+      method: 'POST',
+      body: JSON.stringify(enrollmentData),
+    });
+  }
+
+  async initiatePayment(enrollmentId: string): Promise<ApiResponse<{ payment_session: PaymentSession }>> {
+    return this.request(`/user/enrollments/${enrollmentId}/payment/initiate`, {
+      method: 'POST',
+    });
+  }
+
+  async confirmPayment(paymentId: string, transactionRef?: string): Promise<ApiResponse<{ payment: Payment }>> {
+    return this.request(`/user/payments/${paymentId}/confirm`, {
+      method: 'POST',
+      body: JSON.stringify({ transaction_reference: transactionRef }),
+    });
+  }
+
+  async getPaymentStatus(paymentId: string): Promise<ApiResponse<{ payment_status: PaymentStatusResponse }>> {
+    return this.request(`/user/payments/${paymentId}/status`);
+  }
+
   async getUserPayments(): Promise<ApiResponse<{ payments: PaymentWithTraining[] }>> {
     return this.request('/user/payments');
   }
@@ -193,6 +217,15 @@ class ApiClient {
 
   async getTrainingProgramDetails(id: string): Promise<ApiResponse<{ program: TrainingProgram }>> {
     return this.request(`/user/training-programs/${id}`);
+  }
+
+  // Public methods (no authentication required)
+  async getPublicTrainingPrograms(): Promise<ApiResponse<{ programs: TrainingProgram[] }>> {
+    return this.request('/training-programs');
+  }
+
+  async getPublicTrainingProgramDetails(id: string): Promise<ApiResponse<{ program: TrainingProgram }>> {
+    return this.request(`/training-programs/${id}`);
   }
 
   async getUserDashboard(): Promise<ApiResponse<{ dashboard: UserDashboard }>> {
@@ -313,9 +346,36 @@ class ApiClient {
     return this.request('/admin/dashboard');
   }
 
+  async getAllContactMessages(filters?: ContactMessageFilters): Promise<ApiResponse<{ messages: ContactMessage[]; count: number }>> {
+    const queryParams = new URLSearchParams();
+    if (filters?.status) queryParams.append('status', filters.status);
+    if (filters?.search) queryParams.append('search', filters.search);
+
+    const query = queryParams.toString();
+    return this.request(`/admin/contact-messages${query ? `?${query}` : ''}`);
+  }
+
+  async updateContactMessageStatus(id: string, status: ContactMessageStatus): Promise<ApiResponse<{ message: ContactMessage }>> {
+    return this.request(`/admin/contact-messages/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+  }
+
   // ============================================================================
   // UTILITY METHODS
   // ============================================================================
+
+  // ============================================================================
+  // CONTACT METHODS
+  // ============================================================================
+
+  async submitContactForm(contactData: ContactFormData): Promise<ApiResponse<{ id: string; submitted_at: string }>> {
+    return this.request('/contact', {
+      method: 'POST',
+      body: JSON.stringify(contactData),
+    });
+  }
 
   getCurrentToken(): string | null {
     return this.token;
@@ -516,6 +576,35 @@ export interface CreatePaymentData {
   transaction_reference?: string;
 }
 
+export interface CreateEnrollmentWithDetailsData {
+  training_id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+}
+
+export interface PaymentSession {
+  payment_id: string;
+  enrollment_id: string;
+  training_title: string;
+  amount: number;
+  upi_link: string;
+  qr_code: string;
+  payment_reference: string;
+  expires_at: string;
+  timer_duration: number;
+}
+
+export interface PaymentStatusResponse {
+  id: string;
+  status: PaymentStatus;
+  amount: number;
+  training_title: string;
+  transaction_reference?: string;
+  created_at: string;
+  is_expired: boolean;
+}
+
 export interface UpdateUserRoleData {
   role?: 'user' | 'admin';
   is_admin?: boolean;
@@ -534,6 +623,24 @@ export interface CreateCertificateData {
   training_id: string;
   issue_date: string;
   file_url?: string;
+}
+
+export interface ContactFormData {
+  full_name: string;
+  email: string;
+  subject: string;
+  message: string;
+}
+
+export interface ContactMessage {
+  id: string;
+  full_name: string;
+  email: string;
+  subject: string;
+  message: string;
+  status: ContactMessageStatus;
+  created_at: string;
+  updated_at?: string;
 }
 
 // Filter types
@@ -563,9 +670,15 @@ export interface ActivityLogFilters {
   action?: string;
 }
 
+export interface ContactMessageFilters {
+  status?: ContactMessageStatus;
+  search?: string;
+}
+
 // Status types
 export type EnrollmentStatus = 'pending_payment' | 'enrolled' | 'completed';
 export type PaymentStatus = 'pending_verification' | 'verified' | 'failed' | 'refunded';
+export type ContactMessageStatus = 'new' | 'read' | 'replied' | 'archived';
 
 // Dashboard types
 export interface UserDashboard {
@@ -617,6 +730,10 @@ export const api = {
     updateProfile: (data: Partial<User>) => apiClient.updateUserProfile(data),
     getEnrollments: () => apiClient.getUserEnrollments(),
     createEnrollment: (trainingId: string) => apiClient.createEnrollment(trainingId),
+    createEnrollmentWithDetails: (data: CreateEnrollmentWithDetailsData) => apiClient.createEnrollmentWithDetails(data),
+    initiatePayment: (enrollmentId: string) => apiClient.initiatePayment(enrollmentId),
+    confirmPayment: (paymentId: string, transactionRef?: string) => apiClient.confirmPayment(paymentId, transactionRef),
+    getPaymentStatus: (paymentId: string) => apiClient.getPaymentStatus(paymentId),
     getPayments: () => apiClient.getUserPayments(),
     createPayment: (data: CreatePaymentData) => apiClient.createPayment(data),
     getCertificates: () => apiClient.getUserCertificates(),
@@ -641,6 +758,12 @@ export const api = {
     getAllCertificates: (filters?: CertificateFilters) => apiClient.getAllCertificates(filters),
     getActivityLogs: (filters?: ActivityLogFilters) => apiClient.getAdminActivityLogs(filters),
     getDashboard: () => apiClient.getAdminDashboard(),
+    getAllContactMessages: (filters?: ContactMessageFilters) => apiClient.getAllContactMessages(filters),
+    updateContactMessageStatus: (id: string, status: ContactMessageStatus) => apiClient.updateContactMessageStatus(id, status),
+  },
+  // Contact methods
+  contact: {
+    submitForm: (data: ContactFormData) => apiClient.submitContactForm(data),
   },
   // Direct access methods for convenience
   getUserEnrollments: async () => {
@@ -658,6 +781,15 @@ export const api = {
   getTrainingPrograms: async () => {
     const response = await apiClient.getTrainingPrograms();
     return response.data?.programs || [];
+  },
+  // Public methods (no authentication required)
+  getPublicTrainingPrograms: async () => {
+    const response = await apiClient.getPublicTrainingPrograms();
+    return response.data?.programs || [];
+  },
+  getPublicTrainingProgramDetails: async (id: string) => {
+    const response = await apiClient.getPublicTrainingProgramDetails(id);
+    return response.data?.program;
   }
 };
 

@@ -8,15 +8,15 @@ interface ModernButtonProps {
   disabled?: boolean;
 }
 
-const ModernButton: React.FC<ModernButtonProps> = ({ 
-  text = "Get Started", 
-  onClick, 
+const ModernButton: React.FC<ModernButtonProps> = ({
+  text = "Get Started",
+  onClick,
   className = "",
-  disabled = false 
+  disabled = false
 }) => {
   return (
     <StyledWrapper className={className}>
-      <button 
+      <button
         className="animated-button"
         onClick={(e) => onClick?.(e)}
         disabled={disabled}

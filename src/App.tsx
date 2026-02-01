@@ -29,6 +29,7 @@ import UsersManagement from "./pages/admin/UsersManagement";
 import TrainingsManagement from "./pages/admin/TrainingsManagement";
 import PaymentsManagement from "./pages/admin/PaymentsManagement";
 import CertificatesManagement from "./pages/admin/CertificatesManagement";
+import MessagesManagement from "./pages/admin/MessagesManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -146,6 +147,11 @@ const App = () => {
                 <Route path="/admin/certificates" element={
                   <ProtectedAdminRoute>
                     <CertificatesManagement />
+                  </ProtectedAdminRoute>
+                } />
+                <Route path="/admin/messages" element={
+                  <ProtectedAdminRoute>
+                    <MessagesManagement />
                   </ProtectedAdminRoute>
                 } />
                 

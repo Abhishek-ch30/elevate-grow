@@ -1,11 +1,12 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { 
-  LayoutDashboard, 
-  Users, 
-  GraduationCap, 
-  CreditCard, 
+import {
+  LayoutDashboard,
+  Users,
+  GraduationCap,
+  CreditCard,
   Award,
+  MessageSquare,
   Menu,
   X,
   LogOut,
@@ -27,6 +28,7 @@ const navItems = [
   { href: "/admin/trainings", icon: GraduationCap, label: "Training Programs" },
   { href: "/admin/payments", icon: CreditCard, label: "Payments" },
   { href: "/admin/certificates", icon: Award, label: "Certificates" },
+  { href: "/admin/messages", icon: MessageSquare, label: "Messages" },
 ];
 
 export function AdminLayout({ children }: AdminLayoutProps) {

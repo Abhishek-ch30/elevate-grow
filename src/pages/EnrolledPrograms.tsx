@@ -2,17 +2,19 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { api, Enrollment, TrainingProgram, Payment } from "../lib/api";
 import { UserLayout } from "../components/layout/UserLayout";
-import { 
-  BookOpen, 
-  Clock, 
-  CheckCircle, 
-  AlertCircle, 
+import {
+  BookOpen,
+  Clock,
+  CheckCircle,
+  AlertCircle,
   IndianRupee,
   CreditCard,
   Calendar,
   Search,
   Filter,
-  ExternalLink
+  ExternalLink,
+  RefreshCw,
+  XCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,10 +35,17 @@ const EnrolledPrograms = () => {
   const [enrolledPrograms, setEnrolledPrograms] = useState<EnrolledProgram[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState<"all" | "enrolled" | "completed" | "pending" | "pending_payment" | "pending_verification">("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | "enrolled" | "completed" | "pending" | "pending_payment">("all");
 
   useEffect(() => {
     fetchEnrolledPrograms();
+    
+    // Set up real-time updates every 30 seconds
+    const interval = setInterval(() => {
+      fetchEnrolledPrograms();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, [user]);
 
   const fetchEnrolledPrograms = async () => {
@@ -68,31 +77,56 @@ const EnrolledPrograms = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (program: EnrolledProgram) => {
+    // Determine status based on enrollment status and payment status
+    let displayStatus: string = program.status;
+    let statusText = '';
+    
+    if (program.status === 'pending_payment') {
+      if (program.payment?.status === 'pending_verification') {
+        displayStatus = 'pending_verification';
+        statusText = 'Payment Under Verification';
+      } else if (program.payment?.status === 'failed') {
+        displayStatus = 'payment_failed';
+        statusText = 'Payment Failed - Retry Required';
+      } else {
+        statusText = 'Payment Pending';
+      }
+    } else if (program.status === 'enrolled') {
+      statusText = 'Enrolled - Access Granted';
+    } else if (program.status === 'completed') {
+      statusText = 'Completed';
+    }
+
     const statusConfig = {
-      'pending_payment': { 
-        color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300', 
-        icon: AlertCircle, 
-        text: 'Payment Pending' 
+      'pending_payment': {
+        color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300',
+        icon: AlertCircle,
+        text: statusText || 'Payment Pending'
       },
-      'enrolled': { 
-        color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300', 
-        icon: BookOpen, 
-        text: 'Enrolled' 
+      'enrolled': {
+        color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300',
+        icon: CheckCircle,
+        text: statusText || 'Enrolled'
       },
-      'completed': { 
-        color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300', 
-        icon: CheckCircle, 
-        text: 'Completed' 
+      'completed': {
+        color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300',
+        icon: BookOpen,
+        text: statusText || 'Completed'
       },
-      'pending_verification': { 
-        color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300', 
-        icon: Clock, 
-        text: 'Payment Verification Pending' 
+      'pending_verification': {
+        color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300',
+        icon: Clock,
+        text: statusText || 'Payment Under Verification'
+      },
+      'payment_failed': {
+        color: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300',
+        icon: XCircle,
+        text: statusText || 'Payment Failed'
       }
     };
 
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig['enrolled'];
+    const config = statusConfig[displayStatus as keyof typeof statusConfig] || statusConfig['enrolled'];
     const Icon = config.icon;
 
     return (
@@ -137,8 +171,8 @@ const EnrolledPrograms = () => {
 
   const filteredPrograms = enrolledPrograms.filter(program => {
     const matchesSearch = program.training_program.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === "all" || 
-                          filterStatus === "pending" && (program.status === 'pending_payment' || program.status === 'pending_verification') ||
+    const matchesFilter = filterStatus === "all" ||
+                          (filterStatus === "pending" && (program.status === 'pending_payment' || program.payment?.status === 'pending_verification')) ||
                           program.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
@@ -159,11 +193,23 @@ const EnrolledPrograms = () => {
   return (
     <UserLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Training Programs</h1>
-          <p className="text-muted-foreground">
-            View and manage your enrolled training programs and track your progress.
-          </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">My Training Programs</h1>
+            <p className="text-muted-foreground">
+              View and manage your enrolled training programs and track your progress.
+            </p>
+          </div>
+          <Button
+            onClick={fetchEnrolledPrograms}
+            disabled={loading}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
 
         {/* Search and Filter */}
@@ -204,7 +250,7 @@ const EnrolledPrograms = () => {
               onClick={() => setFilterStatus("pending")}
               size="sm"
             >
-              Pending ({enrolledPrograms.filter(p => p.status === 'pending_payment' || p.status === 'pending_verification').length})
+              Pending ({enrolledPrograms.filter(p => p.status === 'pending_payment' || p.payment?.status === 'pending_verification').length})
             </Button>
           </div>
         </div>
@@ -234,7 +280,7 @@ const EnrolledPrograms = () => {
                     <div className="w-12 h-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                       <BookOpen className="w-6 h-6" />
                     </div>
-                    {getStatusBadge(program.status)}
+                    {getStatusBadge(program)}
                   </div>
                   <CardTitle className="text-lg">{program.training_program.title}</CardTitle>
                   <CardDescription className="line-clamp-2">
@@ -286,14 +332,27 @@ const EnrolledPrograms = () => {
 
                   {/* Action Buttons */}
                   <div className="flex gap-2">
-                    {program.status === 'pending_payment' && (
+                    {program.status === 'pending_payment' && !program.payment && (
                       <Button size="sm" className="flex-1">
                         Complete Payment
                       </Button>
                     )}
+                    {program.status === 'pending_payment' && program.payment?.status === 'pending_verification' && (
+                      <Button size="sm" variant="outline" className="flex-1" disabled>
+                        <Clock className="w-4 h-4 mr-2" />
+                        Awaiting Verification
+                      </Button>
+                    )}
+                    {program.status === 'pending_payment' && program.payment?.status === 'failed' && (
+                      <Button size="sm" variant="destructive" className="flex-1">
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Retry Payment
+                      </Button>
+                    )}
                     {program.status === 'enrolled' && (
-                      <Button size="sm" variant="outline" className="flex-1">
-                        Continue Learning
+                      <Button size="sm" variant="default" className="flex-1 bg-green-600 hover:bg-green-700">
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Access Training
                       </Button>
                     )}
                     {program.status === 'completed' && (

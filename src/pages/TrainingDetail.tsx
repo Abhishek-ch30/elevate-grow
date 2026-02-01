@@ -12,167 +12,75 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { 
-  Clock, 
-  Users, 
-  IndianRupee, 
+import PaymentQRComponent from "@/components/payment/PaymentQRComponent";
+import {
+  Clock,
+  Users,
+  IndianRupee,
   CheckCircle2,
   ArrowLeft,
   GraduationCap,
   Calendar,
   Award,
-  BookOpen
+  BookOpen,
+  RefreshCw
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { api, TrainingProgram, PaymentSession } from "@/lib/api";
 
-// Mock data - in real app this would come from database
-const trainingsData: Record<number, {
-  id: number;
-  title: string;
-  description: string;
-  longDescription: string;
-  duration: string;
-  price: number;
-  enrolled: number;
-  badge: string;
-  curriculum: string[];
-  prerequisites: string[];
-  outcomes: string[];
-}> = {
-  1: {
-    id: 1,
-    title: "React.js Masterclass",
-    description: "Build modern, scalable web applications with React, Redux, TypeScript, and modern tooling.",
-    longDescription: "This comprehensive React.js course takes you from fundamentals to advanced concepts. You'll learn to build production-ready applications using modern React patterns, TypeScript, state management with Redux Toolkit, and testing with React Testing Library. By the end, you'll be confident in building complex, scalable frontend applications.",
-    duration: "8 weeks",
-    price: 15000,
-    enrolled: 45,
-    badge: "Popular",
-    curriculum: [
-      "React Fundamentals & JSX",
-      "Hooks Deep Dive (useState, useEffect, useContext, useReducer)",
-      "TypeScript with React",
-      "State Management with Redux Toolkit",
-      "React Router for Navigation",
-      "API Integration & Data Fetching",
-      "Testing with React Testing Library",
-      "Performance Optimization",
-    ],
-    prerequisites: [
-      "Basic JavaScript knowledge",
-      "HTML & CSS fundamentals",
-      "Understanding of ES6+ features",
-    ],
-    outcomes: [
-      "Build complete React applications from scratch",
-      "Implement complex state management",
-      "Write maintainable, type-safe code",
-      "Deploy applications to production",
-    ],
-  },
-  2: {
-    id: 2,
-    title: "Cloud Architecture with AWS",
-    description: "Design and deploy scalable cloud infrastructure on Amazon Web Services.",
-    longDescription: "Master Amazon Web Services and learn to architect scalable, secure, and cost-effective cloud solutions. This hands-on course covers core AWS services, infrastructure as code, security best practices, and real-world architecture patterns. Perfect for developers looking to transition into cloud roles or enhance their DevOps skills.",
-    duration: "10 weeks",
-    price: 25000,
-    enrolled: 32,
-    badge: "Advanced",
-    curriculum: [
-      "AWS Fundamentals & IAM",
-      "EC2, VPC & Networking",
-      "S3 & Storage Solutions",
-      "RDS & DynamoDB",
-      "Lambda & Serverless",
-      "CloudFormation & Terraform",
-      "CI/CD with CodePipeline",
-      "Security & Compliance",
-      "Cost Optimization",
-      "Architecture Patterns",
-    ],
-    prerequisites: [
-      "Basic understanding of networking",
-      "Command line familiarity",
-      "Programming experience in any language",
-    ],
-    outcomes: [
-      "Design scalable AWS architectures",
-      "Implement infrastructure as code",
-      "Optimize cloud costs",
-      "Prepare for AWS certifications",
-    ],
-  },
-  3: {
-    id: 3,
-    title: "Full Stack Development",
-    description: "Comprehensive training covering React, Node.js, databases, and deployment.",
-    longDescription: "Become a complete full-stack developer with this intensive program. You'll master frontend development with React, backend with Node.js and Express, databases (SQL and NoSQL), and modern deployment practices. Build real-world projects that demonstrate your ability to create production-ready applications.",
-    duration: "12 weeks",
-    price: 35000,
-    enrolled: 28,
-    badge: "Comprehensive",
-    curriculum: [
-      "HTML, CSS & JavaScript Fundamentals",
-      "React.js & State Management",
-      "Node.js & Express",
-      "RESTful API Design",
-      "PostgreSQL & MongoDB",
-      "Authentication & Authorization",
-      "Testing Strategies",
-      "Docker & Containerization",
-      "CI/CD Pipelines",
-      "Cloud Deployment",
-      "Capstone Project",
-    ],
-    prerequisites: [
-      "Basic programming knowledge",
-      "Problem-solving mindset",
-      "Commitment to intensive learning",
-    ],
-    outcomes: [
-      "Build full-stack applications independently",
-      "Understand the complete software development lifecycle",
-      "Deploy and maintain production applications",
-      "Prepare for full-stack developer roles",
-    ],
-  },
-};
-
-// Add more training data for other IDs
-for (let i = 4; i <= 8; i++) {
-  trainingsData[i] = {
-    id: i,
-    title: `Training Program ${i}`,
-    description: "A comprehensive training program designed for professionals.",
-    longDescription: "This program offers in-depth training on modern technologies and best practices. You'll gain hands-on experience through practical projects and real-world scenarios.",
-    duration: "8 weeks",
-    price: 15000 + (i * 2000),
-    enrolled: 20 + i,
-    badge: "Available",
-    curriculum: ["Module 1", "Module 2", "Module 3", "Module 4"],
-    prerequisites: ["Basic knowledge required"],
-    outcomes: ["Skill 1", "Skill 2", "Skill 3"],
-  };
-}
+// Training detail component for displaying individual training program information
 
 const TrainingDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [isEnrollOpen, setIsEnrollOpen] = useState(false);
+  const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+  const [training, setTraining] = useState<TrainingProgram | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [enrolling, setEnrolling] = useState(false);
+  const [paymentSession, setPaymentSession] = useState<PaymentSession | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     mobile: "",
-    userType: "professional",
+    userType: "professional" as "professional" | "student",
   });
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // Scroll to top when component mounts
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+    fetchTrainingDetails();
+  }, [id]);
 
-  const training = trainingsData[Number(id)];
+
+  const fetchTrainingDetails = async () => {
+    if (!id) return;
+    
+    try {
+      setLoading(true);
+      // Use public endpoint if user is not authenticated, otherwise use authenticated endpoint
+      const response = user
+        ? await api.user.getTrainingProgramDetails(id)
+        : await api.getPublicTrainingProgramDetails(id);
+      
+      if (response?.status === 'success' && response.data) {
+        setTraining(response.data.program);
+      } else if (response) {
+        setTraining(response);
+      }
+    } catch (error: any) {
+      console.error('Error fetching training details:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load training details",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!training) {
     return (
@@ -203,16 +111,138 @@ const TrainingDetail = () => {
     );
   }
 
-  const handleEnrollSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // In real app, this would submit to backend
-    toast({
-      title: "Enrollment Initiated!",
-      description: "Redirecting to payment...",
-    });
-    setIsEnrollOpen(false);
-    // Would navigate to payment page
+  const handleEnrollClick = async () => {
+    if (!user) {
+      toast({
+        title: "Account Required",
+        description: "Please create an account to enroll in training programs",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      // Fetch fresh user data from database
+      const userProfileResponse = await api.user.getProfile();
+      if (userProfileResponse.status === 'success' && userProfileResponse.data) {
+        const profile = userProfileResponse.data.profile;
+        
+        // Pre-fill form with database data
+        setFormData({
+          name: profile.full_name || "",
+          email: profile.email || "",
+          mobile: profile.phone?.toString() || "",
+          userType: profile.profession || "professional"
+        });
+        
+        setIsEnrollOpen(true);
+      } else {
+        throw new Error('Failed to fetch user profile');
+      }
+    } catch (error: any) {
+      console.error('Error fetching user profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load user profile. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
+
+  const handleEnrollSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!training || !user) {
+      toast({
+        title: "Error",
+        description: "Please login to enroll",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setEnrolling(true);
+      
+      // Create enrollment with user details
+      const enrollmentResponse = await api.user.createEnrollmentWithDetails({
+        training_id: training.id,
+        full_name: formData.name,
+        email: formData.email,
+        phone: formData.mobile
+      });
+
+      if (enrollmentResponse.status === 'success' && enrollmentResponse.data) {
+        toast({
+          title: "Enrollment Created!",
+          description: "Initiating payment process...",
+        });
+
+        // Initiate payment session
+        const paymentResponse = await api.user.initiatePayment(enrollmentResponse.data.enrollment.id);
+        
+        if (paymentResponse.status === 'success' && paymentResponse.data) {
+          setPaymentSession(paymentResponse.data.payment_session);
+          setIsEnrollOpen(false);
+          setIsPaymentOpen(true);
+        } else {
+          throw new Error(paymentResponse.message || 'Failed to initiate payment');
+        }
+      } else {
+        throw new Error(enrollmentResponse.message || 'Failed to create enrollment');
+      }
+    } catch (error: any) {
+      console.error('Error during enrollment:', error);
+      toast({
+        title: "Enrollment Failed",
+        description: error.message || "Failed to process enrollment",
+        variant: "destructive",
+      });
+    } finally {
+      setEnrolling(false);
+    }
+  };
+
+  const handlePaymentRetry = async (enrollmentId: string) => {
+    try {
+      // Re-initiate payment for the existing enrollment
+      const paymentResponse = await api.user.initiatePayment(enrollmentId);
+      
+      if (paymentResponse.status === 'success' && paymentResponse.data) {
+        setPaymentSession(paymentResponse.data.payment_session);
+        setIsPaymentOpen(true);
+        toast({
+          title: "Payment Retry Initiated",
+          description: "New payment session created. Please complete the payment.",
+        });
+      } else {
+        throw new Error(paymentResponse.message || 'Failed to retry payment');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Retry Failed",
+        description: error.message || "Failed to retry payment. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <PageLayout>
+        <div className="relative min-h-screen circuit-board-bg overflow-hidden">
+          <div className="container mx-auto max-w-7xl relative z-10 px-4 sm:px-6 lg:px-8 mt-8">
+            <div className="bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/15 shadow-2xl p-8 sm:p-12 lg:p-16">
+              <div className="text-center">
+                <RefreshCw className="w-8 h-8 animate-spin text-cyan-400 mx-auto mb-4" />
+                <h1 className="text-2xl font-bold text-white mb-4">Loading Training Details...</h1>
+              </div>
+            </div>
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout>
@@ -239,8 +269,8 @@ const TrainingDetail = () => {
           
           {/* Breadcrumb */}
           <section className="mb-8">
-            <Link 
-              to="/training" 
+            <Link
+              to="/training"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-sm text-white/90 hover:bg-white/15 hover:border-white/30 transition-all duration-300 group"
             >
               <ArrowLeft className="w-4 h-4 text-cyan-400 group-hover:-translate-x-0.5 transition-transform duration-300" />
@@ -252,31 +282,31 @@ const TrainingDetail = () => {
           <section className="mb-16">
             <div className="max-w-4xl">
               <div className="inline-block px-3 py-1 rounded-full bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 text-sm font-medium mb-4">
-                {training.badge}
+                Available
               </div>
-              <h1 
+              <h1
                 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4"
                 style={{ fontFamily: "'Nasalization', sans-serif" }}
               >
-                {training.title}
+                {training?.title}
               </h1>
               <p className="text-lg text-white/70 mb-6">
-                {training.longDescription}
+                {training?.description}
               </p>
               
               {/* Meta */}
               <div className="flex flex-wrap gap-6 text-sm text-white/60">
                 <div className="flex items-center gap-2">
                   <Clock className="w-5 h-5 text-cyan-400" />
-                  <span>{training.duration}</span>
+                  <span>{training?.duration || 'Not specified'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-cyan-400" />
-                  <span>{training.enrolled} enrolled</span>
+                  <span>Open for enrollment</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-cyan-400" />
-                  <span>Next batch: Feb 2024</span>
+                  <span>Next batch: Starting Soon</span>
                 </div>
               </div>
             </div>
@@ -284,69 +314,43 @@ const TrainingDetail = () => {
 
           {/* Main Content */}
           <section className="mb-16">
-            <div className="grid lg:grid-cols-3 gap-12">
-              {/* Left Column - Curriculum Only */}
-              <div className="lg:col-span-2">
-                {/* Curriculum */}
-                <div>
-                  <h2 
-                    className="text-3xl md:text-4xl font-bold text-white mb-6 flex items-center gap-3"
-                    style={{ fontFamily: "'Nasalization', sans-serif" }}
-                  >
-                    <BookOpen className="w-6 h-6 text-cyan-400" />
-                    Curriculum
-                  </h2>
-                  <ul className="space-y-3">
-                    {training.curriculum.map((item, index) => (
-                      <li key={index} className="flex items-start gap-3 p-4 rounded-xl bg-black/40 backdrop-blur-md border-2 border-cyan-500/50 cursor-pointer transition-all duration-300 hover:border-cyan-400 hover:shadow-2xl hover:shadow-cyan-500/20">
-                        <span className="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 text-sm font-medium flex items-center justify-center shrink-0">
-                          {index + 1}
-                        </span>
-                        <span className="text-white/90">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-
-              {/* Right Column - Prerequisites and Outcomes */}
-              <div className="lg:col-span-1 space-y-16">
-                {/* Prerequisites */}
-                <div className="mt-8">
-                  <h2 
-                    className="text-3xl md:text-4xl font-bold text-white mb-6 flex items-center gap-3"
-                    style={{ fontFamily: "'Nasalization', sans-serif" }}
-                  >
-                    <GraduationCap className="w-6 h-6 text-cyan-400" />
-                    Prerequisites
-                  </h2>
-                  <ul className="space-y-2">
-                    {training.prerequisites.map((item, index) => (
-                      <li key={index} className="flex items-center gap-3 text-white/70">
-                        <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Outcomes */}
-                <div>
-                  <h2 
-                    className="text-3xl md:text-4xl font-bold text-white mb-6 flex items-center gap-3"
-                    style={{ fontFamily: "'Nasalization', sans-serif" }}
-                  >
-                    <Award className="w-6 h-6 text-cyan-400" />
-                    What You'll Achieve
-                  </h2>
-                  <ul className="space-y-3">
-                    {training.outcomes.map((item, index) => (
-                      <li key={index} className="flex items-center gap-3 text-white/70">
-                        <CheckCircle2 className="w-5 h-5 text-cyan-400 shrink-0" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
+            <div className="max-w-4xl">
+              <h2
+                className="text-3xl md:text-4xl font-bold text-white mb-6 flex items-center gap-3"
+                style={{ fontFamily: "'Nasalization', sans-serif" }}
+              >
+                <BookOpen className="w-6 h-6 text-cyan-400" />
+                About This Training
+              </h2>
+              <div className="p-6 rounded-xl bg-black/40 backdrop-blur-md border-2 border-cyan-500/50">
+                <p className="text-white/90 leading-relaxed text-lg">
+                  {training?.description || 'This comprehensive training program is designed to equip you with industry-relevant skills and practical knowledge.'}
+                </p>
+                
+                <div className="grid md:grid-cols-3 gap-6 mt-8 pt-6 border-t border-cyan-500/30">
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-2 text-cyan-400 mb-2">
+                      <GraduationCap className="w-5 h-5" />
+                      <span className="font-semibold">Expert-Led</span>
+                    </div>
+                    <p className="text-white/70 text-sm">Industry professionals as instructors</p>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-2 text-cyan-400 mb-2">
+                      <BookOpen className="w-5 h-5" />
+                      <span className="font-semibold">Hands-On</span>
+                    </div>
+                    <p className="text-white/70 text-sm">Practical projects and real-world scenarios</p>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-2 text-cyan-400 mb-2">
+                      <Award className="w-5 h-5" />
+                      <span className="font-semibold">Certified</span>
+                    </div>
+                    <p className="text-white/70 text-sm">Industry-recognized completion certificate</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -359,18 +363,35 @@ const TrainingDetail = () => {
                 <div className="text-center md:text-left">
                   <div className="flex items-center justify-center md:justify-start gap-2 text-4xl md:text-5xl font-bold text-white mb-2">
                     <IndianRupee className="w-8 h-8 md:w-10 md:h-10 text-cyan-400" />
-                    {training.price.toLocaleString("en-IN")}
+                    {training?.price?.toLocaleString("en-IN") || '0'}
                   </div>
                   <p className="text-base md:text-lg text-white/60">One-time payment</p>
                 </div>
                 
                 <div className="text-center md:text-right">
-                  <button
-                    onClick={() => setIsEnrollOpen(true)}
-                    className="inline-flex items-center justify-center gap-3 bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 py-4 px-8 rounded-xl hover:bg-cyan-500/30 hover:border-cyan-400 transition-all duration-300 font-medium text-lg md:text-xl"
-                  >
-                    Enroll Now
-                  </button>
+                  {!user ? (
+                    <Link
+                      to="/signup"
+                      className="inline-flex items-center justify-center gap-3 bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 py-4 px-8 rounded-xl hover:bg-cyan-500/30 hover:border-cyan-400 transition-all duration-300 font-medium text-lg md:text-xl"
+                    >
+                      Create Account to Enroll
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={handleEnrollClick}
+                      disabled={enrolling}
+                      className="inline-flex items-center justify-center gap-3 bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 py-4 px-8 rounded-xl hover:bg-cyan-500/30 hover:border-cyan-400 transition-all duration-300 font-medium text-lg md:text-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {enrolling ? (
+                        <>
+                          <RefreshCw className="w-5 h-5 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        'Enroll Now'
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -468,13 +489,35 @@ const TrainingDetail = () => {
             </div>
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-3 bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 py-3 px-4 rounded-lg hover:bg-cyan-500/30 hover:border-cyan-400 transition-all duration-300 font-medium"
+              disabled={enrolling}
+              className="w-full flex items-center justify-center gap-3 bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 py-3 px-4 rounded-lg hover:bg-cyan-500/30 hover:border-cyan-400 transition-all duration-300 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Proceed to Payment
+              {enrolling ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Processing Enrollment...
+                </>
+              ) : (
+                'Proceed to Payment'
+              )}
             </button>
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Payment QR Modal */}
+      {paymentSession && (
+        <PaymentQRComponent
+          isOpen={isPaymentOpen}
+          onClose={() => {
+            setIsPaymentOpen(false);
+            // Optional: Reset payment session after closing
+            // setPaymentSession(null);
+          }}
+          paymentSession={paymentSession}
+          onRetryPayment={handlePaymentRetry}
+        />
+      )}
     </PageLayout>
   );
 };

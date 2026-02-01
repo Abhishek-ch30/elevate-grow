@@ -10,7 +10,8 @@ import {
     XCircle,
     Clock,
     IndianRupee,
-    Eye
+    Eye,
+    RefreshCw
 } from "lucide-react";
 import {
     Dialog,
@@ -26,6 +27,10 @@ import { api, Payment, User, TrainingProgram } from "@/lib/api";
 interface PaymentWithDetails extends Payment {
     user: User;
     training_program: TrainingProgram;
+    // Backend returns these directly
+    full_name: string;
+    email: string;
+    training_title: string;
 }
 
 const PaymentsManagement = () => {
@@ -34,10 +39,19 @@ const PaymentsManagement = () => {
     const [selectedPayment, setSelectedPayment] = useState<PaymentWithDetails | null>(null);
     const [paymentsList, setPaymentsList] = useState<PaymentWithDetails[]>([]);
     const [loading, setLoading] = useState(true);
+    const [verifyingPayment, setVerifyingPayment] = useState<string | null>(null);
+    const [rejectingPayment, setRejectingPayment] = useState<string | null>(null);
     const { toast } = useToast();
 
     useEffect(() => {
         fetchPayments();
+        
+        // Set up real-time updates every 30 seconds
+        const interval = setInterval(() => {
+            fetchPayments();
+        }, 30000);
+
+        return () => clearInterval(interval);
     }, []);
 
     const fetchPayments = async () => {
@@ -49,9 +63,26 @@ const PaymentsManagement = () => {
                 throw new Error(response.message);
             }
 
-            // We need to map the backend response to match PaymentWithDetails interface if needed
-            // The backend returns user and training_program objects inside the payment objects already.
-            setPaymentsList((response.data?.payments as any[]) || []);
+            // Map the backend response to match PaymentWithDetails interface
+            const payments = (response.data?.payments || []).map((payment: any) => ({
+                ...payment,
+                user: {
+                    id: payment.user_id,
+                    full_name: payment.full_name,
+                    email: payment.email,
+                    role: 'user',
+                    is_admin: false,
+                    created_at: ''
+                },
+                training_program: {
+                    id: payment.training_id,
+                    title: payment.training_title,
+                    is_active: true,
+                    created_at: ''
+                }
+            }));
+            
+            setPaymentsList(payments);
         } catch (error) {
             console.error('Error fetching payments:', error);
             toast({
@@ -66,7 +97,9 @@ const PaymentsManagement = () => {
 
     const filteredPayments = paymentsList.filter(payment => {
         const matchesSearch = payment.user?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            payment.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             payment.training_program?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            payment.training_title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             payment.transaction_reference?.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesStatus = statusFilter === "all" || payment.status === statusFilter;
         return matchesSearch && matchesStatus;
@@ -74,6 +107,7 @@ const PaymentsManagement = () => {
 
     const handleVerify = async (id: string) => {
         try {
+            setVerifyingPayment(id);
             const response = await api.admin.updatePaymentStatus(id, 'verified');
 
             if (response.status === 'error') throw new Error(response.message);
@@ -83,8 +117,8 @@ const PaymentsManagement = () => {
             ));
             setSelectedPayment(null);
             toast({
-                title: "Payment Verified",
-                description: "The payment has been verified successfully.",
+                title: "Payment Verified ✅",
+                description: "The payment has been verified successfully. User will be notified and can now access the training program.",
             });
         } catch (error) {
             console.error('Error verifying payment:', error);
@@ -93,11 +127,14 @@ const PaymentsManagement = () => {
                 description: "Failed to verify payment.",
                 variant: "destructive",
             });
+        } finally {
+            setVerifyingPayment(null);
         }
     };
 
     const handleReject = async (id: string) => {
         try {
+            setRejectingPayment(id);
             const response = await api.admin.updatePaymentStatus(id, 'failed');
 
             if (response.status === 'error') throw new Error(response.message);
@@ -107,8 +144,8 @@ const PaymentsManagement = () => {
             ));
             setSelectedPayment(null);
             toast({
-                title: "Payment Rejected",
-                description: "The payment has been marked as failed.",
+                title: "Payment Rejected ❌",
+                description: "The payment has been marked as failed. User will be notified.",
                 variant: "destructive",
             });
         } catch (error) {
@@ -118,6 +155,8 @@ const PaymentsManagement = () => {
                 description: "Failed to reject payment.",
                 variant: "destructive",
             });
+        } finally {
+            setRejectingPayment(null);
         }
     };
 
@@ -153,9 +192,21 @@ const PaymentsManagement = () => {
         <AdminLayout>
             <div className="space-y-6">
                 {/* Header */}
-                <div>
-                    <h1 className="text-2xl md:text-3xl font-heading font-bold text-foreground">Payments</h1>
-                    <p className="text-muted-foreground mt-1">Verify and manage payment transactions.</p>
+                <div className="flex items-start justify-between">
+                    <div>
+                        <h1 className="text-2xl md:text-3xl font-heading font-bold text-foreground">Payments</h1>
+                        <p className="text-muted-foreground mt-1">Verify and manage payment transactions.</p>
+                    </div>
+                    <Button
+                        onClick={fetchPayments}
+                        disabled={loading}
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                    >
+                        <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+                        Refresh
+                    </Button>
                 </div>
 
                 {/* Stats */}
@@ -239,11 +290,11 @@ const PaymentsManagement = () => {
                                             <tr key={payment.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                                                 <td className="px-6 py-4">
                                                     <div>
-                                                        <p className="font-medium text-foreground">{payment.user?.full_name || 'Unknown'}</p>
-                                                        <p className="text-sm text-muted-foreground">{payment.user?.email || 'No email'}</p>
+                                                        <p className="font-medium text-foreground">{payment.user?.full_name || payment.full_name || 'Unknown'}</p>
+                                                        <p className="text-sm text-muted-foreground">{payment.user?.email || payment.email || 'No email'}</p>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-foreground">{payment.training_program?.title || 'Unknown'}</td>
+                                                <td className="px-6 py-4 text-sm text-foreground">{payment.training_program?.title || payment.training_title || 'Unknown'}</td>
                                                 <td className="px-6 py-4">
                                                     <span className="flex items-center gap-1 font-medium text-foreground">
                                                         <IndianRupee className="w-4 h-4" />
@@ -291,15 +342,15 @@ const PaymentsManagement = () => {
                             <div className="space-y-3">
                                 <div className="flex justify-between py-2 border-b border-border">
                                     <span className="text-muted-foreground">User</span>
-                                    <span className="font-medium text-foreground">{selectedPayment.user?.full_name || 'Unknown'}</span>
+                                    <span className="font-medium text-foreground">{selectedPayment.user?.full_name || selectedPayment.full_name || 'Unknown'}</span>
                                 </div>
                                 <div className="flex justify-between py-2 border-b border-border">
                                     <span className="text-muted-foreground">Email</span>
-                                    <span className="text-foreground">{selectedPayment.user?.email || 'No email'}</span>
+                                    <span className="text-foreground">{selectedPayment.user?.email || selectedPayment.email || 'No email'}</span>
                                 </div>
                                 <div className="flex justify-between py-2 border-b border-border">
                                     <span className="text-muted-foreground">Training</span>
-                                    <span className="font-medium text-foreground">{selectedPayment.training_program?.title || 'Unknown'}</span>
+                                    <span className="font-medium text-foreground">{selectedPayment.training_program?.title || selectedPayment.training_title || 'Unknown'}</span>
                                 </div>
                                 <div className="flex justify-between py-2 border-b border-border">
                                     <span className="text-muted-foreground">Amount</span>
@@ -332,16 +383,41 @@ const PaymentsManagement = () => {
 
                             {selectedPayment.status === "pending_verification" && (
                                 <div className="flex gap-3 pt-4">
-                                    <ModernButton
-                                        text="Reject"
+                                    <Button
                                         onClick={() => handleReject(selectedPayment.id)}
+                                        disabled={rejectingPayment === selectedPayment.id || verifyingPayment === selectedPayment.id}
+                                        variant="destructive"
                                         className="flex-1"
-                                    />
-                                    <ModernButton
-                                        text="Verify"
+                                    >
+                                        {rejectingPayment === selectedPayment.id ? (
+                                            <>
+                                                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                                                Rejecting...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <XCircle className="w-4 h-4 mr-2" />
+                                                Reject Payment
+                                            </>
+                                        )}
+                                    </Button>
+                                    <Button
                                         onClick={() => handleVerify(selectedPayment.id)}
-                                        className="flex-1"
-                                    />
+                                        disabled={verifyingPayment === selectedPayment.id || rejectingPayment === selectedPayment.id}
+                                        className="flex-1 bg-green-600 hover:bg-green-700"
+                                    >
+                                        {verifyingPayment === selectedPayment.id ? (
+                                            <>
+                                                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                                                Verifying...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <CheckCircle2 className="w-4 h-4 mr-2" />
+                                                Verify Payment
+                                            </>
+                                        )}
+                                    </Button>
                                 </div>
                             )}
                         </div>

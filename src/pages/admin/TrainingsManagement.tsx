@@ -53,7 +53,6 @@ const TrainingsManagement = () => {
     try {
       setLoading(true);
       const response = await api.admin.getAllTrainingPrograms();
-      console.log('Fetched training programs:', response.data?.programs);
       setTrainingsList(response.data?.programs || []);
     } catch (error) {
       console.error('Error fetching trainings:', error);
@@ -373,10 +372,6 @@ const TrainingsManagement = () => {
                         Enrolled
                       </span>
                       <span className="font-medium">{training.enrolled_count || 0} users</span>
-                    </div>
-                    {/* Debug info - remove later */}
-                    <div className="text-xs text-gray-500">
-                      Debug: enrolled_count = {training.enrolled_count}
                     </div>
                   </div>
 

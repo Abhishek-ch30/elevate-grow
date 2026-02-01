@@ -11,10 +11,10 @@ export function CTASection() {
       
       {/* White Glass Overlay */}
       <div className="absolute inset-0 z-[5] pointer-events-none">
-        <div className="absolute inset-6 rounded-[2.5rem] bg-white/5 backdrop-blur-sm border border-white/10" />
+        <div className="absolute inset-2 md:inset-8 rounded-3xl md:rounded-[2.5rem] bg-white/5 backdrop-blur-sm border border-white/10" />
       </div>
       
-      <div className="container mx-auto px-10 py-6 relative z-10">
+      <div className="container mx-auto px-2 md:px-8 py-6 relative z-10">
         <div className="relative overflow-hidden rounded-3xl bg-black/40 backdrop-blur-md p-12 md:p-16 border border-cyan-500/20">
           {/* Background Decoration */}
           <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />

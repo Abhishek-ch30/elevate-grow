@@ -15,7 +15,7 @@ export function HeroSection() {
   return (
     <section
       id="home"
-      className="relative min-h-screen flex items-center overflow-hidden px-4 sm:px-6 lg:px-8 circuit-board-bg"
+      className="relative min-h-screen flex items-center overflow-hidden px-2 md:px-8 circuit-board-bg"
     >
       {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
@@ -34,11 +34,11 @@ export function HeroSection() {
           }}
         />
         <div className="absolute inset-0 z-[5] pointer-events-none">
-          <div className="absolute inset-x-6 md:inset-x-8 top-6 bottom-6 rounded-3xl md:rounded-[2.5rem] bg-white/5 backdrop-blur-sm border border-white/10" />
+          <div className="absolute inset-2 md:inset-8 rounded-3xl md:rounded-[2.5rem] bg-white/5 backdrop-blur-sm border border-white/10" />
         </div>
       </div>
 
-      <div className="container mx-auto max-w-7xl relative z-10 px-0">
+      <div className="container mx-auto max-w-7xl relative z-10 px-2 md:px-8">
         <div className="grid lg:grid-cols-2 gap-4 lg:gap-8 items-center min-h-[80vh]">
           {/* Left Content */}
           <div className="space-y-6 pl-0">

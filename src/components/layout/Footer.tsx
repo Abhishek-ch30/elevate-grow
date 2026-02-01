@@ -13,10 +13,10 @@ export function Footer() {
       </div>
 
       {/* Content */}
-      <div className="container mx-auto max-w-7xl px-6 md:px-12 py-8 md:py-12 relative z-10">
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
+      <div className="container mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-8 md:py-12 relative z-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
           {/* Brand Column */}
-          <div className="space-y-4 col-span-2 md:col-span-1">
+          <div className="space-y-4 lg:col-span-1">
             <Link to="/" className="flex items-center gap-3">
               <img
                 src="https://i.ibb.co/wFJCHfcK/Screenshot-2026-01-21-121113.png"

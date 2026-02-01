@@ -6,6 +6,9 @@ import { useRegisterSW } from 'virtual:pwa-register/react'
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import { ProtectedAdminRoute } from "./components/auth/ProtectedAdminRoute";
+import { AuthCheck } from "./components/auth/AuthCheck";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Services from "./pages/Services";
@@ -80,29 +83,75 @@ const App = () => {
             </div>
           )}
           <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/services" element={<Services />} />
-              <Route path="/training" element={<Training />} />
-              <Route path="/training/:id" element={<TrainingDetail />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/enrolled-programs" element={<EnrolledPrograms />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/certificates" element={<Certificates />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/admin/login" element={<AdminLogin />} />
+            <AuthCheck>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/services" element={<Services />} />
+                <Route path="/training" element={<Training />} />
+                <Route path="/training/:id" element={<TrainingDetail />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/admin/login" element={<AdminLogin />} />
 
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/users" element={<UsersManagement />} />
-              <Route path="/admin/trainings" element={<TrainingsManagement />} />
-              <Route path="/admin/payments" element={<PaymentsManagement />} />
-              <Route path="/admin/certificates" element={<CertificatesManagement />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+                {/* Protected User Routes */}
+                <Route path="/dashboard" element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/enrolled-programs" element={
+                  <ProtectedRoute>
+                    <EnrolledPrograms />
+                  </ProtectedRoute>
+                } />
+                <Route path="/profile" element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                } />
+                <Route path="/certificates" element={
+                  <ProtectedRoute>
+                    <Certificates />
+                  </ProtectedRoute>
+                } />
+                <Route path="/settings" element={
+                  <ProtectedRoute>
+                    <Settings />
+                  </ProtectedRoute>
+                } />
+
+                {/* Protected Admin Routes */}
+                <Route path="/admin" element={
+                  <ProtectedAdminRoute>
+                    <AdminDashboard />
+                  </ProtectedAdminRoute>
+                } />
+                <Route path="/admin/users" element={
+                  <ProtectedAdminRoute>
+                    <UsersManagement />
+                  </ProtectedAdminRoute>
+                } />
+                <Route path="/admin/trainings" element={
+                  <ProtectedAdminRoute>
+                    <TrainingsManagement />
+                  </ProtectedAdminRoute>
+                } />
+                <Route path="/admin/payments" element={
+                  <ProtectedAdminRoute>
+                    <PaymentsManagement />
+                  </ProtectedAdminRoute>
+                } />
+                <Route path="/admin/certificates" element={
+                  <ProtectedAdminRoute>
+                    <CertificatesManagement />
+                  </ProtectedAdminRoute>
+                } />
+                
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </AuthCheck>
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

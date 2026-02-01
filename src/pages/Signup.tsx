@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { Eye, EyeOff, Mail, Lock, ArrowRight, User, Phone, Building, GraduationCap, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "../contexts/AuthContext";
@@ -21,15 +22,49 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [visibleSections, setVisibleSections] = useState<Set<string>>(new Set());
+  const sectionRefs = useRef<(HTMLElement | null)[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      navigate("/dashboard");
+      // Check if user is admin and redirect accordingly
+      if (user.role === 'admin' && user.is_admin === true) {
+        navigate("/admin");
+      } else {
+        navigate("/dashboard");
+      }
     }
   }, [user, navigate]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const sectionId = entry.target.getAttribute('data-section') || '';
+          if (entry.isIntersecting) {
+            setVisibleSections((prev) => new Set(prev).add(sectionId));
+          }
+        });
+      },
+      {
+        threshold: 0.2,
+        rootMargin: '0px 0px -50px 0px'
+      }
+    );
+
+    sectionRefs.current.forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => {
+      sectionRefs.current.forEach((ref) => {
+        if (ref) observer.unobserve(ref);
+      });
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,7 +100,13 @@ const Signup = () => {
         title: "Account Created Successfully!",
         description: "Welcome to ElevateGrow! You're now logged in.",
       });
-      navigate("/dashboard");
+      
+      // Check if created user is admin and redirect accordingly
+      if (user?.role === 'admin' && user?.is_admin === true) {
+        navigate("/admin");
+      } else {
+        navigate("/dashboard");
+      }
     }
 
     setIsLoading(false);
@@ -95,47 +136,48 @@ const Signup = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-black circuit-board-bg overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0">
-        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-accent/15 rounded-full blur-3xl animate-float animation-delay-500" />
-        <div
-          className="absolute inset-0 opacity-5"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
-            `,
-            backgroundSize: "50px 50px",
-          }}
-        />
-      </div>
+    <div className="relative min-h-screen bg-black overflow-hidden">
+      {/* Circuit Board Pattern - Matching Other Sections */}
+      <div className="absolute inset-0 circuit-board-bg opacity-30"></div>
 
       {/* Centered Signup Card */}
-      <div className="relative z-10 flex items-center justify-center min-h-screen px-4 py-8">
-        <div className="w-full max-w-lg bg-white/5 backdrop-blur-xl rounded-3xl md:rounded-[2.5rem] border border-white/15 shadow-2xl p-6 md:p-8 flex flex-col items-center gap-6">
+      <div className="relative z-10 flex items-center justify-center min-h-screen px-3 sm:px-6 lg:px-8 py-8">
+        <div className={cn(
+          "w-full max-w-4xl bg-white/5 backdrop-blur-xl rounded-3xl md:rounded-[2.5rem] border border-white/15 shadow-2xl p-10 md:p-16 flex flex-col items-center gap-8 transition-all duration-1200",
+          visibleSections.has('signup') ? "opacity-100 scale-100" : "opacity-0 scale-95"
+        )}
+        ref={(el) => (sectionRefs.current[0] = el)}
+        data-section="signup"
+        >
           {/* Logo & Heading */}
-          <Link to="/" className="inline-flex items-center gap-2 mb-2">
-            <img
-              src="https://i.ibb.co/wFJCHfcK/Screenshot-2026-01-21-121113.png"
-              alt="QThink Solutions Logo"
-              className="w-10 h-10 rounded-lg object-contain"
-            />
-            <span className="text-base font-heading font-semibold text-white">
-              QThink Solutions
-            </span>
-          </Link>
-          <h2 className="text-2xl font-bold text-white">Create Account</h2>
-          <p className="text-white/70 text-sm text-center">Join us today! Please fill in your details</p>
+          <div className={cn(
+            "text-center transition-all duration-700 delay-200",
+            visibleSections.has('signup') ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-8"
+          )}>
+            <Link to="/" className="inline-flex items-center gap-2 mb-2">
+              <img
+                src="https://i.ibb.co/wFJCHfcK/Screenshot-2026-01-21-121113.png"
+                alt="QThink Solutions Logo"
+                className="w-10 h-10 rounded-lg object-contain transition-transform duration-500 hover:scale-110"
+              />
+              <span className="text-base font-heading font-semibold text-white">
+                QThink Solutions
+              </span>
+            </Link>
+            <h2 className="text-3xl font-bold text-white">Create Account</h2>
+            <p className="text-gray-300 text-base text-center">Join us today! Please fill in your details</p>
+          </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
             {/* Name */}
-            <div>
-              <Label htmlFor="name" className="text-white/80 text-sm mb-1 block">Full Name *</Label>
+            <div className={cn(
+              "transition-all duration-700 delay-300",
+              visibleSections.has('signup') ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+            )}>
+              <Label htmlFor="name" className="text-gray-300 text-base mb-1 block">Full Name *</Label>
               <div className="flex items-center gap-3 bg-black/40 border border-cyan-500/30 rounded-lg px-3 py-2 focus-within:border-cyan-400">
-                <User className="w-5 h-5 text-white/60 flex-shrink-0" />
+                <User className="w-5 h-5 text-gray-400 flex-shrink-0" />
                 <Input
                   id="name"
                   type="text"
@@ -146,7 +188,7 @@ const Signup = () => {
                       bg-transparent
                       border-none
                       text-white
-                      placeholder:text-white/60
+                      placeholder:text-gray-500
                       w-full
 
                       focus:outline-none
@@ -161,10 +203,13 @@ const Signup = () => {
             </div>
 
             {/* Phone */}
-            <div>
-              <Label htmlFor="phone" className="text-white/80 text-sm mb-1 block">Phone Number *</Label>
+            <div className={cn(
+              "transition-all duration-700 delay-400",
+              visibleSections.has('signup') ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+            )}>
+              <Label htmlFor="phone" className="text-gray-300 text-base mb-1 block">Phone Number *</Label>
               <div className="flex items-center gap-3 bg-black/40 border border-cyan-500/30 rounded-lg px-3 py-2 focus-within:border-cyan-400">
-                <Phone className="w-5 h-5 text-white/60 flex-shrink-0" />
+                <Phone className="w-5 h-5 text-gray-400 flex-shrink-0" />
                 <Input
                   id="phone"
                   type="tel"
@@ -175,7 +220,7 @@ const Signup = () => {
                       bg-transparent
                       border-none
                       text-white
-                      placeholder:text-white/60
+                      placeholder:text-gray-500
                       w-full
 
                       focus:outline-none
@@ -190,10 +235,13 @@ const Signup = () => {
             </div>
 
             {/* Email */}
-            <div>
-              <Label htmlFor="email" className="text-white/80 text-sm mb-1 block">Email Address *</Label>
+            <div className={cn(
+              "transition-all duration-700 delay-500",
+              visibleSections.has('signup') ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+            )}>
+              <Label htmlFor="email" className="text-gray-300 text-base mb-1 block">Email Address *</Label>
               <div className="flex items-center gap-3 bg-black/40 border border-cyan-500/30 rounded-lg px-3 py-2 focus-within:border-cyan-400">
-                <Mail className="w-5 h-5 text-white/60 flex-shrink-0" />
+                <Mail className="w-5 h-5 text-gray-400 flex-shrink-0" />
                 <Input
                   id="email"
                   type="email"
@@ -204,7 +252,7 @@ const Signup = () => {
                       bg-transparent
                       border-none
                       text-white
-                      placeholder:text-white/60
+                      placeholder:text-gray-500
                       w-full
 
                       focus:outline-none
@@ -220,7 +268,7 @@ const Signup = () => {
 
             {/* Profession */}
             <div>
-              <Label htmlFor="profession" className="text-white/80 text-sm mb-1 block">Profession *</Label>
+              <Label htmlFor="profession" className="text-white/80 text-base mb-1 block">Profession *</Label>
               <div className="flex items-center gap-3 bg-black/40 border border-cyan-500/30 rounded-lg px-3 py-1.5 focus-within:border-cyan-400">
                 <Building className="w-5 h-5 text-white/60 flex-shrink-0" />
                 <select
@@ -253,7 +301,7 @@ const Signup = () => {
             {/* Dynamic College/Company */}
             {formData.profession === "student" && (
               <div>
-                <Label htmlFor="college" className="text-white/80 text-sm mb-1 block">College/University *</Label>
+                <Label htmlFor="college" className="text-white/80 text-base mb-1 block">College/University *</Label>
                 <div className="flex items-center gap-3 bg-black/40 border border-cyan-500/30 rounded-lg px-3 py-2 focus-within:border-cyan-400">
                   <GraduationCap className="w-5 h-5 text-white/60 flex-shrink-0" />
                   <Input
@@ -282,7 +330,7 @@ const Signup = () => {
             )}
             {formData.profession === "professional" && (
               <div>
-                <Label htmlFor="company" className="text-white/80 text-sm mb-1 block">Company *</Label>
+                <Label htmlFor="company" className="text-white/80 text-base mb-1 block">Company *</Label>
                 <div className="flex items-center gap-3 bg-black/40 border border-cyan-500/30 rounded-lg px-3 py-2 focus-within:border-cyan-400">
                   <Building className="w-5 h-5 text-white/60 flex-shrink-0" />
                   <Input
@@ -312,7 +360,7 @@ const Signup = () => {
 
             {/* Password Section */}
             <div>
-              <Label htmlFor="password" className="text-white/80 text-sm mb-1 block">Password *</Label>
+              <Label htmlFor="password" className="text-white/80 text-base mb-1 block">Password *</Label>
               <div className="flex items-center gap-3 bg-black/40 border border-cyan-500/30 rounded-lg px-3 py-2 focus-within:border-cyan-400 relative">
                 <Lock className="w-5 h-5 text-white/60 flex-shrink-0" />
                 <Input
@@ -356,7 +404,7 @@ const Signup = () => {
                     special: "Special character",
                   };
                   return (
-                    <div key={key} className="flex items-center gap-1 text-xs">
+                    <div key={key} className="flex items-center gap-1 text-base">
                       {passed ? (
                         <Check className="w-3 h-3 text-green-400" />
                       ) : (
@@ -374,7 +422,7 @@ const Signup = () => {
             {/* Confirm Password */}
             {allChecksPassed && (
               <div>
-                <Label htmlFor="confirmPassword" className="text-white/80 text-sm mb-1 block">Confirm Password *</Label>
+                <Label htmlFor="confirmPassword" className="text-white/80 text-base mb-1 block">Confirm Password *</Label>
                 <div className="flex items-center gap-3 bg-black/40 border border-cyan-500/30 rounded-lg px-3 py-2 focus-within:border-cyan-400 relative">
                   <Lock className="w-5 h-5 text-white/60 flex-shrink-0" />
                   <Input
@@ -408,7 +456,7 @@ const Signup = () => {
                   </button>
                 </div>
                 {formData.confirmPassword && (
-                  <div className="flex items-center gap-1 text-xs mt-1 px-1">
+                  <div className="flex items-center gap-1 text-base mt-1 px-1">
                     {formData.password === formData.confirmPassword ? (
                       <Check className="w-3 h-3 text-green-400" />
                     ) : (
@@ -432,7 +480,7 @@ const Signup = () => {
             </button>
 
             {/* Login Link */}
-            <p className="text-white/60 text-sm text-center mt-2">
+            <p className="text-white/60 text-base text-center mt-2">
               Already have an account?{" "}
               <Link to="/login" className="text-cyan-400 hover:text-cyan-300 font-medium">
                 Sign in

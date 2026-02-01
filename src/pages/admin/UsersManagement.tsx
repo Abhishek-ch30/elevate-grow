@@ -49,9 +49,12 @@ const UsersManagement = () => {
         throw new Error(response.message);
       }
 
-      const users = response.data?.users || [];
+      const allUsers = response.data?.users || [];
+      
+      // Filter out admin users - only show regular users (is_admin: false)
+      const nonAdminUsers = allUsers.filter(user => user.is_admin === false);
 
-      const usersWithDetails: UserWithDetails[] = users.map(user => {
+      const usersWithDetails: UserWithDetails[] = nonAdminUsers.map(user => {
         // Since we don't have enrollments/payments included in the basic list yet,
         // we'll default these to 0/none. 
         // Real implementation should update getAllUsers to include counts if needed,
@@ -78,8 +81,9 @@ const UsersManagement = () => {
   };
 
   const filteredUsers = usersList.filter(user =>
-    user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    user.is_admin === false && // Only show non-admin users
+    (user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (

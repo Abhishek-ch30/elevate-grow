@@ -246,6 +246,12 @@ class ApiClient {
     });
   }
 
+  async deleteTrainingProgram(id: string): Promise<ApiResponse<{ program: TrainingProgram }>> {
+    return this.request(`/admin/training-programs/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   async getAllEnrollments(filters?: EnrollmentFilters): Promise<ApiResponse<{ enrollments: AdminEnrollment[]; count: number }>> {
     const queryParams = new URLSearchParams();
     if (filters?.status) queryParams.append('status', filters.status);
@@ -384,6 +390,7 @@ export interface TrainingProgram {
   is_active: boolean;
   created_at: string;
   updated_at?: string;
+  enrolled_count?: number;
 }
 
 export interface Enrollment {
@@ -625,6 +632,7 @@ export const api = {
     getAllTrainingPrograms: () => apiClient.getAllTrainingPrograms(),
     createTrainingProgram: (data: CreateTrainingProgramData) => apiClient.createTrainingProgram(data),
     updateTrainingProgram: (id: string, data: Partial<CreateTrainingProgramData>) => apiClient.updateTrainingProgram(id, data),
+    deleteTrainingProgram: (id: string) => apiClient.deleteTrainingProgram(id),
     getAllEnrollments: (filters?: EnrollmentFilters) => apiClient.getAllEnrollments(filters),
     updateEnrollmentStatus: (id: string, status: EnrollmentStatus) => apiClient.updateEnrollmentStatus(id, status),
     getAllPayments: (filters?: PaymentFilters) => apiClient.getAllPayments(filters),

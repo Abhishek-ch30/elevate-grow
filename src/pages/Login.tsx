@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import ModernButton from "@/components/ui/ModernButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "../contexts/AuthContext";
@@ -16,21 +17,64 @@ const Login = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [visibleSections, setVisibleSections] = useState<Set<string>>(new Set());
+  const sectionRefs = useRef<(HTMLElement | null)[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Get the redirect path from location state or default
+  const from = location.state?.from?.pathname || "/dashboard";
 
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      navigate("/dashboard");
+      // Check if user is admin and redirect accordingly
+      if (user.role === 'admin' && user.is_admin === true) {
+        // If admin was trying to access admin routes, redirect to admin dashboard
+        if (from.startsWith('/admin')) {
+          navigate(from, { replace: true });
+        } else {
+          navigate("/admin", { replace: true });
+        }
+      } else {
+        navigate(from, { replace: true });
+      }
     }
-  }, [user, navigate]);
+  }, [user, navigate, from]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const sectionId = entry.target.getAttribute('data-section') || '';
+          if (entry.isIntersecting) {
+            setVisibleSections((prev) => new Set(prev).add(sectionId));
+          }
+        });
+      },
+      {
+        threshold: 0.2,
+        rootMargin: '0px 0px -50px 0px'
+      }
+    );
+
+    sectionRefs.current.forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => {
+      sectionRefs.current.forEach((ref) => {
+        if (ref) observer.unobserve(ref);
+      });
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    const { error } = await signIn({ email: formData.email, password: formData.password });
+    const { error, user: loggedInUser } = await signIn({ email: formData.email, password: formData.password });
 
     if (error) {
       toast({
@@ -43,7 +87,18 @@ const Login = () => {
         title: "Login Successful!",
         description: "Welcome back to QThink Solutions.",
       });
-      navigate("/dashboard");
+      
+      // Check if logged in user is admin and redirect accordingly
+      if (loggedInUser?.role === 'admin' && loggedInUser?.is_admin === true) {
+        // If admin was trying to access admin routes, redirect to intended page
+        if (from.startsWith('/admin')) {
+          navigate(from, { replace: true });
+        } else {
+          navigate("/admin", { replace: true });
+        }
+      } else {
+        navigate(from, { replace: true });
+      }
     }
 
     setIsLoading(false);
@@ -62,63 +117,65 @@ const Login = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-black circuit-board-bg overflow-hidden">
-      {/* BACKGROUND ELEMENTS */}
-      <div className="absolute inset-0">
-        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-accent/15 rounded-full blur-3xl animate-float animation-delay-500" />
-        <div
-          className="absolute inset-0 opacity-5"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
-            `,
-            backgroundSize: "50px 50px",
-          }}
-        />
-      </div>
+    <div className="relative min-h-screen bg-black overflow-hidden">
+      {/* Circuit Board Pattern - Matching Other Sections */}
+      <div className="absolute inset-0 circuit-board-bg opacity-30"></div>
 
       {/* LOGIN CONTAINER */}
-      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-4xl bg-white/5 backdrop-blur-xl rounded-3xl md:rounded-[2.5rem] border border-white/15 shadow-2xl p-6 md:p-8">
+      <div className="relative z-10 min-h-screen flex items-center justify-center px-3 sm:px-6 lg:px-8 py-8">
+        <div className={cn(
+          "w-full max-w-6xl bg-white/5 backdrop-blur-xl rounded-3xl md:rounded-[2.5rem] border border-white/15 shadow-2xl p-10 md:p-16 transition-all duration-1200",
+          visibleSections.has('login') ? "opacity-100 scale-100" : "opacity-0 scale-95"
+        )}
+        ref={(el) => (sectionRefs.current[0] = el)}
+        data-section="login"
+        >
           <div className="flex flex-col md:flex-row items-center gap-8">
             {/* LOGIN FORM CONTAINER */}
-            <div className="flex-1 max-w-md">
+            <div className={cn(
+              "flex-1 max-w-md transition-all duration-800 delay-200",
+              visibleSections.has('login') ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-16"
+            )}>
               {/* LOGO SECTION */}
-              <div className="text-center mb-6">
+              <div className={cn(
+                "text-center mb-6 transition-all duration-700 delay-300",
+                visibleSections.has('login') ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-8"
+              )}>
                 <Link to="/" className="inline-flex items-center gap-3 mb-4">
                   <img
                     src="https://i.ibb.co/wFJCHfcK/Screenshot-2026-01-21-121113.png"
                     alt="QThink Solutions Logo"
-                    className="w-12 h-12 rounded-lg object-contain"
+                    className="w-12 h-12 rounded-lg object-contain transition-transform duration-500 hover:scale-110"
                   />
                   <span className="text-xl font-heading font-semibold text-white">
                     QThink Solutions
                   </span>
                 </Link>
-                <h2 className="text-2xl font-bold text-white mb-2">
+                <h2 className="text-3xl font-bold text-white mb-2">
                   Welcome back
                 </h2>
-                <p className="text-white/70 text-sm">
+                <p className="text-gray-300 text-base">
                   Welcome back! Please enter your details
                 </p>
               </div>
 
               {/* LOGIN FORM */}
-              <form onSubmit={handleSubmit} className="space-y-3">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 {/* EMAIL FIELD */}
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-white/80 text-sm">Email</Label>
+                <div className={cn(
+                  "space-y-2 transition-all duration-700 delay-400",
+                  visibleSections.has('login') ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+                )}>
+                  <Label htmlFor="email" className="text-gray-300 text-base">Email</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <Input
                       id="email"
                       type="email"
                       placeholder="Enter your email"
                       value={formData.email}
                       onChange={(e) => handleInputChange("email", e.target.value)}
-                      className="pl-10 bg-black/40 border-cyan-500/30 text-white placeholder:text-white/60 focus:border-cyan-400 focus:bg-black/40 focus:outline-none rounded-lg"
+                      className="pl-10 bg-black/40 border-cyan-500/30 text-white placeholder:text-gray-500 focus:border-cyan-400 focus:bg-black/40 focus:outline-none rounded-lg"
                       style={{
                         WebkitTextFillColor: 'white',
                         WebkitBoxShadow: '0 0 0px 1000px rgb(0 0 0 / 0.4) inset',
@@ -130,17 +187,20 @@ const Login = () => {
                 </div>
 
                 {/* PASSWORD FIELD */}
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-white/80 text-sm">Password</Label>
+                <div className={cn(
+                  "space-y-2 transition-all duration-700 delay-500",
+                  visibleSections.has('login') ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+                )}>
+                  <Label htmlFor="password" className="text-gray-300 text-base">Password</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <Input
                       id="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
                       value={formData.password}
                       onChange={(e) => handleInputChange("password", e.target.value)}
-                      className="pl-10 pr-10 bg-black/40 border-cyan-500/30 text-white placeholder:text-white/60 focus:border-cyan-400 focus:bg-black/40 focus:outline-none rounded-lg"
+                      className="pl-10 pr-10 bg-black/40 border-cyan-500/30 text-white placeholder:text-gray-500 focus:border-cyan-400 focus:bg-black/40 focus:outline-none rounded-lg"
                       style={{
                         WebkitTextFillColor: 'white',
                         WebkitBoxShadow: '0 0 0px 1000px rgb(0 0 0 / 0.4) inset',
@@ -151,7 +211,7 @@ const Login = () => {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-cyan-400 transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-cyan-400 transition-colors"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -159,16 +219,19 @@ const Login = () => {
                 </div>
 
                 {/* REMEMBER & FORGOT */}
-                <div className="flex items-center justify-between">
+                <div className={cn(
+                  "flex items-center justify-between transition-all duration-700 delay-600",
+                  visibleSections.has('login') ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                )}>
                   <div className="flex items-center space-x-2">
                     <input
                       type="checkbox"
                       id="remember"
                       className="rounded border-cyan-500/30 bg-black/40 text-cyan-400 focus:ring-cyan-400 focus:ring-offset-0"
                     />
-                    <Label htmlFor="remember" className="text-white/70 text-sm">Remember me</Label>
+                    <Label htmlFor="remember" className="text-gray-300 text-base">Remember me</Label>
                   </div>
-                  <Link to="/forgot-password" className="text-cyan-400 hover:text-cyan-300 text-sm transition-colors">
+                  <Link to="/forgot-password" className="text-cyan-400 hover:text-cyan-300 text-base transition-colors">
                     Forgot password?
                   </Link>
                 </div>
@@ -176,23 +239,34 @@ const Login = () => {
                 {/* SIGN IN BUTTON */}
                 <button
                   type="submit"
-                  className="w-full flex items-center justify-center gap-3 bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 py-3 px-4 rounded-lg hover:bg-cyan-500/30 hover:border-cyan-400 transition-all duration-300 font-medium"
+                  className={cn(
+                    "w-full flex items-center justify-center gap-3 bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 py-3 px-4 rounded-lg hover:bg-cyan-500/30 hover:border-cyan-400 transition-all duration-500 font-medium",
+                    visibleSections.has('login') ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                  )}
+                  style={{ transitionDelay: visibleSections.has('login') ? '700ms' : '0ms' }}
                 >
                   {isLoading ? "Signing in..." : "Sign in"}
                 </button>
               </form>
 
               {/* DIVIDER */}
-              <div className="flex items-center my-4">
+              <div className={cn(
+                "flex items-center my-4 transition-all duration-700 delay-800",
+                visibleSections.has('login') ? "opacity-100" : "opacity-0"
+              )}>
                 <div className="flex-1 h-px bg-white/20"></div>
-                <span className="px-4 text-white/60 text-sm">or</span>
+                <span className="px-4 text-gray-400 text-base">or</span>
                 <div className="flex-1 h-px bg-white/20"></div>
               </div>
 
               {/* GOOGLE SIGN IN */}
               <button
                 onClick={handleGoogleSignIn}
-                className="w-full flex items-center justify-center gap-3 bg-black/40 border border-cyan-500/30 text-white py-3 px-4 rounded-lg hover:bg-black/60 hover:border-cyan-400 transition-all duration-300"
+                className={cn(
+                  "w-full flex items-center justify-center gap-3 bg-black/40 border border-cyan-500/30 text-white py-3 px-4 rounded-lg hover:bg-black/60 hover:border-cyan-400 transition-all duration-500",
+                  visibleSections.has('login') ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                )}
+                style={{ transitionDelay: visibleSections.has('login') ? '900ms' : '0ms' }}
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -204,8 +278,11 @@ const Login = () => {
               </button>
 
               {/* SIGN UP LINK */}
-              <div className="text-center mt-4">
-                <p className="text-white/60 text-sm">
+              <div className={cn(
+                "text-center mt-4 transition-all duration-700 delay-1000",
+                visibleSections.has('login') ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              )}>
+                <p className="text-gray-400 text-base">
                   Don't have an account?{" "}
                   <Link to="/signup" className="text-cyan-400 hover:text-cyan-300 transition-colors font-medium">
                     Sign up
@@ -218,12 +295,15 @@ const Login = () => {
             <div className="hidden md:block h-96 w-px bg-white/20 mt-8"></div>
 
             {/* IMAGE SECTION */}
-            <div className="hidden md:flex flex-1 items-center justify-center mt-8">
+            <div className={cn(
+              "hidden md:flex flex-1 items-center justify-center mt-8 transition-all duration-800 delay-400",
+              visibleSections.has('login') ? "opacity-100 translate-x-0" : "opacity-0 translate-x-16"
+            )}>
               <div className="relative w-full max-w-md">
                 <img
                   src="https://i.ibb.co/5xsy5mT5/Secure-login-bro.jpg"
                   alt="Secure login illustration"
-                  className="w-full h-auto rounded-2xl object-cover"
+                  className="w-full h-auto rounded-2xl object-cover transition-transform duration-700 hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-cyan-500/10 rounded-2xl"></div>
               </div>

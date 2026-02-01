@@ -1,31 +1,41 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AdminLayout } from "./AdminLayout";
 import { Button } from "@/components/ui/button";
+import ModernButton from "@/components/ui/ModernButton";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { 
-  Search, 
-  Plus, 
-  MoreHorizontal, 
-  Users, 
-  IndianRupee, 
-  Clock, 
-  Edit, 
-  Eye, 
-  Trash2,
-  GraduationCap
+import {
+  Search,
+  Plus,
+  MoreHorizontal,
+  Users,
+  IndianRupee,
+  Clock,
+  Edit,
+  Eye,
+  Trash2
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { api, TrainingProgram } from "@/lib/api";
-import { AdminLayout } from "./AdminLayout";
 
 interface TrainingWithEnrollments extends TrainingProgram {
-  enrolled_count: number;
+  enrolled_count?: number;
 }
 
 const TrainingsManagement = () => {
@@ -53,8 +63,24 @@ const TrainingsManagement = () => {
     try {
       setLoading(true);
       const response = await api.admin.getAllTrainingPrograms();
-      console.log('Fetched training programs:', response.data?.programs);
-      setTrainingsList(response.data?.programs || []);
+
+      if (response.status === 'error') {
+        throw new Error(response.message);
+      }
+
+      const trainings = response.data?.programs || [];
+
+      const trainingsWithCount = trainings.map(training => ({
+        ...training,
+        // Backend returns is_active, but api interface might expect enrolled_count
+        // For now, we reuse the object from API. If API doesn't return count, we need 0.
+        // The current API service implementation doesn't join with enrollments count. 
+        // We will mock it as 0 for now as the backend admin.service.js getAllTrainingPrograms 
+        // doesn't do a count query yet (it maps primitive fields).
+        enrolled_count: 0
+      }));
+
+      setTrainingsList(trainingsWithCount);
     } catch (error) {
       console.error('Error fetching trainings:', error);
       toast({
@@ -106,8 +132,12 @@ const TrainingsManagement = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (isSubmitting) return;
+    // Prevent multiple submissions
+    if (isSubmitting) {
+      return;
+    }
 
+    // Validate all required fields
     if (!formData.title.trim() || !formData.description.trim() || !formData.duration.trim() || !formData.price.trim()) {
       toast({
         title: "Validation Error",
@@ -211,6 +241,7 @@ const TrainingsManagement = () => {
 
     if (!selectedProgram || isSubmitting) return;
 
+    // Validate all required fields
     if (!formData.title.trim() || !formData.description.trim() || !formData.duration.trim() || !formData.price.trim()) {
       toast({
         title: "Validation Error",
@@ -277,10 +308,10 @@ const TrainingsManagement = () => {
             <h1 className="text-2xl md:text-3xl font-heading font-bold text-foreground">Training Programs</h1>
             <p className="text-muted-foreground mt-1">Create and manage training programs.</p>
           </div>
-          <Button onClick={() => setIsDialogOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Program
-          </Button>
+          <ModernButton
+            text="Add Program"
+            onClick={() => setIsDialogOpen(true)}
+          />
         </div>
 
         {/* Search */}
@@ -296,106 +327,74 @@ const TrainingsManagement = () => {
 
         {/* Training Cards */}
         {loading ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Loading training programs...</p>
-          </div>
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTrainings.map((training) => (
-              <Card key={training.id} className="relative">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                      <GraduationCap className="w-6 h-6" />
-                    </div>
-                    <div className="flex flex-col gap-2 items-end">
-                      <div className="flex flex-col gap-2">
-                        <Badge variant={training.is_active ? "default" : "secondary"}>
-                          {training.is_active ? "Active" : "Inactive"}
-                        </Badge>
-                        <Badge variant={training.is_active ? "default" : "secondary"} className="bg-green-500/20 text-green-400 border-green-500/30">
-                          {training.is_active ? "Public" : "Hidden"}
-                        </Badge>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEdit(training)}>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit Program
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleView(training)}>
-                            <Eye className="w-4 h-4 mr-2" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleDelete(training)}
-                            className="text-red-600"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete Program
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                  <CardTitle className="text-lg">{training.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="text-sm text-muted-foreground">
-                    <p className="line-clamp-3 overflow-hidden">
-                      {training.description || 'No description available'}
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-2 text-muted-foreground">
-                        <Clock className="w-4 h-4" />
-                        Duration
-                      </span>
-                      <span className="font-medium">{training.duration || 'Not specified'}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-2 text-muted-foreground">
-                        <IndianRupee className="w-4 h-4" />
-                        Price
-                      </span>
-                      <span className="font-medium">₹{training.price?.toLocaleString("en-IN") || '0'}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-2 text-muted-foreground">
-                        <Users className="w-4 h-4" />
-                        Enrolled
-                      </span>
-                      <span className="font-medium">{training.enrolled_count || 0} users</span>
-                    </div>
-                    {/* Debug info - remove later */}
-                    <div className="text-xs text-gray-500">
-                      Debug: enrolled_count = {training.enrolled_count}
-                    </div>
-                  </div>
+                  <Badge variant={training.is_active ? "default" : "secondary"}>
+                    {training.is_active ? "Active" : "Inactive"}
+                  </Badge>
+                  <Badge variant={training.is_active ? "default" : "secondary"} className="bg-green-500/20 text-green-400 border-green-500/30">
+                    {training.is_active ? "Public" : "Hidden"}
+                  </Badge>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleEdit(training)}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit Program
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleView(training)}>
+                        <Eye className="w-4 h-4 mr-2" />
+                        View Details
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleDelete(training)}
+                        className="text-red-600 focus:text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete Program
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
 
-                  <div className="flex items-center justify-between pt-4 border-t">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-sm font-medium">Public Visibility</span>
-                      <span className="text-xs text-muted-foreground">
-                        {training.is_active 
-                          ? "Program is visible on public website" 
-                          : "Program is hidden from public website"}
-                      </span>
-                    </div>
-                    <Switch
-                      checked={training.is_active}
-                      onCheckedChange={() => toggleStatus(training.id)}
-                    />
+                <h3 className="text-lg font-semibold text-foreground mb-2">{training.title}</h3>
+                <p className="text-sm text-muted-foreground mb-4">{training.description || 'No description available'}</p>
+
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <Clock className="w-4 h-4" />
+                      Duration
+                    </span>
+                    <span className="font-medium text-foreground">{training.duration || 'Not specified'}</span>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <IndianRupee className="w-4 h-4" />
+                      Price
+                    </span>
+                    <span className="font-medium text-foreground">₹{training.price?.toLocaleString("en-IN") || '0'}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <Users className="w-4 h-4" />
+                      Enrolled
+                    </span>
+                    <span className="font-medium text-foreground">{training.enrolled_count || 0} users</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-4 border-t border-border">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm font-medium text-foreground">Public Visibility</span>
+                    <span className="text-xs text-muted-foreground">
+                      {training.is_active 
+                        ? "Program is visible on public website" 
+                        : "Program is hidden from public website"}
+                    </span>
+                  </div>
+                  <Switch
+                    checked={training.is_active}
+                    onCheckedChange={() => toggleStatus(training.id)}
+                  />
+                </div>
+              </div>
             ))}
           </div>
         )}

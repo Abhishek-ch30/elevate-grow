@@ -119,12 +119,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
+      // Call backend logout endpoint to invalidate session
       await apiClient.logout()
     } catch (error) {
       console.error('Logout error:', error)
     } finally {
+      // Clear all authentication data regardless of API call success
       setUser(null)
       setToken(null)
+      // Clear token from localStorage
+      localStorage.removeItem('qthink_solutions_token')
     }
   }
 

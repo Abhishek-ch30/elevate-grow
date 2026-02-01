@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,8 +13,36 @@ export default function AdminLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
-  const { signIn } = useAuth();
+  const { signIn, isAuthenticated, isAdmin, loading } = useAuth();
+
+  // Get the redirect path from location state or default to admin dashboard
+  const from = location.state?.from?.pathname || "/admin";
+
+  // Redirect if already authenticated as admin
+  useEffect(() => {
+    if (!loading && isAuthenticated && isAdmin) {
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, isAdmin, loading, navigate, from]);
+
+  // Show loading spinner while checking authentication
+  if (loading) {
+    return (
+      <div className="relative min-h-screen bg-black circuit-board-bg overflow-hidden flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white/70">Verifying authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect if already authenticated as admin (early return)
+  if (isAuthenticated && isAdmin) {
+    return null; // Will be handled by useEffect
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +64,11 @@ export default function AdminLogin() {
         title: "Login Successful",
         description: "Welcome to Admin Dashboard",
       });
-      navigate("/admin");
+      
+      // Immediate redirect after successful login
+      setTimeout(() => {
+        navigate(from, { replace: true });
+      }, 100);
       
     } catch (error: any) {
       console.error('Admin login error:', error);
@@ -184,18 +216,10 @@ export default function AdminLogin() {
               <div className="mt-4 p-3 bg-black/40 border border-cyan-500/30 rounded-lg">
                 <p className="text-xs text-white/60 text-center">
                   <strong>Admin Access:</strong><br />
-                  New admin accounts can be created via signup<br />
-                  Existing admins can sign in with their credentials
+                  Please contact your system administrator<br />
+                  to obtain admin credentials
                 </p>
               </div>
-
-              {/* SIGNUP LINK */}
-              <p className="text-white/60 text-sm text-center mt-4">
-                Don't have an admin account?{" "}
-                <Link to="/admin/signup" className="text-cyan-400 hover:text-cyan-300 font-medium">
-                  Sign up
-                </Link>
-              </p>
             </div>
 
             {/* VERTICAL LINE */}

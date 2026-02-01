@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import ModernButton from "@/components/ui/ModernButton";
 import { Code2, Lightbulb, Palette, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useEffect, useRef, useState } from "react";
 
 const services = [
   {
@@ -29,6 +30,36 @@ const services = [
 ];
 
 export function ServicesPreview() {
+  const [visibleCards, setVisibleCards] = useState<Set<number>>(new Set());
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const index = parseInt(entry.target.getAttribute('data-index') || '0');
+          if (entry.isIntersecting) {
+            setVisibleCards((prev) => new Set(prev).add(index));
+          }
+        });
+      },
+      {
+        threshold: 0.2,
+        rootMargin: '0px 0px -50px 0px'
+      }
+    );
+
+    cardRefs.current.forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => {
+      cardRefs.current.forEach((ref) => {
+        if (ref) observer.unobserve(ref);
+      });
+    };
+  }, []);
+
   return (
     <section className="py-20 bg-black relative overflow-hidden">
       {/* Circuit Board Pattern - Matching Landing Page */}
@@ -36,55 +67,83 @@ export function ServicesPreview() {
 
       {/* White Glass Overlay */}
       <div className="absolute inset-0 z-[5] pointer-events-none">
-        <div className="absolute inset-1 md:inset-6 rounded-3xl md:rounded-[2.5rem] bg-white/5 backdrop-blur-sm border border-white/10" />
+        <div className="absolute inset-2 md:inset-8 rounded-3xl md:rounded-[2.5rem] bg-white/5 backdrop-blur-sm border border-white/10" />
       </div>
 
-      <div className="container mx-auto px-3 sm:px-6 lg:px-8 py-6 relative z-10">
+      <div className="container mx-auto px-3 sm:px-6 lg:px-8 py-8 relative z-10">
         {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-16">
+        <div className="text-center max-w-3xl mx-auto mb-20">
           <span className="text-cyan-400 font-medium text-sm uppercase tracking-wider">What We Do</span>
-          <h2 className="text-3xl md:text-4xl font-heading font-bold text-white mt-3 mb-4">
+          <h2 className="text-4xl md:text-5xl font-heading font-bold text-white mt-4 mb-6">
             Our Core Services
           </h2>
-          <p className="text-gray-300">
+          <p className="text-lg text-gray-300 leading-relaxed">
             We combine technical excellence with strategic thinking to deliver solutions that make a real impact.
           </p>
         </div>
 
         {/* Services Grid */}
-        <div className="grid md:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid md:grid-cols-3 gap-6 md:gap-8 max-w-7xl mx-auto">
           {services.map((service, index) => (
             <div
               key={service.title}
+              ref={(el) => (cardRefs.current[index] = el)}
+              data-index={index}
               className={cn(
-                "group p-4 sm:p-6 rounded-xl bg-black/40 backdrop-blur-md border-2 border-cyan-500/50 cursor-pointer transition-all duration-300",
-                "hover:border-cyan-400 hover:shadow-2xl hover:shadow-cyan-500/20",
-                "animate-fade-up",
-                index === 1 && "animation-delay-100",
-                index === 2 && "animation-delay-200"
+                "group p-6 sm:p-8 rounded-2xl bg-black/40 backdrop-blur-md border-2 border-cyan-500/50 cursor-pointer transition-all duration-700",
+                "hover:shadow-2xl hover:shadow-cyan-500/20 hover:border-cyan-400",
+                visibleCards.has(index) 
+                  ? "opacity-100 translate-y-0 scale-100" 
+                  : "opacity-0 translate-y-12 scale-95",
+                index === 0 && visibleCards.has(index) && "animate-fade-up",
+                index === 1 && visibleCards.has(index) && "animate-fade-up animation-delay-100",
+                index === 2 && visibleCards.has(index) && "animate-fade-up animation-delay-200"
               )}
-              style={{ transform: 'scale(1)', transition: 'transform 0.3s ease' }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              style={{ 
+                transform: visibleCards.has(index) ? 'scale(1)' : 'scale(0.95)',
+                transition: 'transform 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
             >
 
-
-              <div className={cn("w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-3 sm:mb-4", service.color)}>
-                <service.icon className="w-6 h-6 sm:w-7 sm:h-7" />
+              <div className={cn("w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mb-6 transition-transform duration-700", 
+                service.color,
+                visibleCards.has(index) ? "scale-100 rotate-0" : "scale-0 rotate-12"
+              )}>
+                <service.icon className="w-8 h-8 sm:w-9 sm:h-9" />
               </div>
 
-              <h3 className="text-lg sm:text-xl font-semibold text-white mb-2 sm:mb-3 group-hover:text-cyan-400 transition-colors">
+              <h3 className={cn("text-xl sm:text-2xl font-semibold text-white mb-4 group-hover:text-cyan-400 transition-all duration-700",
+                visibleCards.has(index) ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              )}>
                 {service.title}
               </h3>
 
-              <p className="text-sm text-gray-300 mb-4 sm:mb-6 leading-relaxed">
+              <p className={cn("text-base text-gray-300 mb-6 leading-relaxed transition-all duration-700 delay-100",
+                visibleCards.has(index) ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              )}>
                 {service.description}
               </p>
 
-              <ul className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
-                {service.features.map((feature) => (
-                  <li key={feature} className="flex items-center gap-2 text-xs sm:text-sm text-gray-400">
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 flex-shrink-0" />
+              <ul className={cn("space-y-3 mb-6 transition-all duration-700 delay-200",
+                visibleCards.has(index) ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              )}>
+                {service.features.map((feature, featureIndex) => (
+                  <li 
+                    key={feature} 
+                    className={cn("flex items-center gap-3 text-sm text-gray-400 transition-all duration-500",
+                      visibleCards.has(index) 
+                        ? "opacity-100 translate-x-0" 
+                        : "opacity-0 -translate-x-4"
+                    )}
+                    style={{ transitionDelay: visibleCards.has(index) ? `${300 + featureIndex * 100}ms` : '0ms' }}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-cyan-400 flex-shrink-0" />
                     {feature}
                   </li>
                 ))}
@@ -92,10 +151,12 @@ export function ServicesPreview() {
 
               <Link
                 to="/services"
-                className="inline-flex items-center gap-2 text-sm font-medium text-cyan-400 group-hover:gap-3 transition-all"
+                className={cn("inline-flex items-center gap-2 text-base font-medium text-cyan-400 group-hover:gap-3 transition-all duration-700 delay-300",
+                  visibleCards.has(index) ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                )}
               >
                 Learn More
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-5 h-5" />
               </Link>
             </div>
           ))}

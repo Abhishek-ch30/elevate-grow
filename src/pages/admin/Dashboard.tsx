@@ -61,13 +61,21 @@ const AdminDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      // Use admin dashboard API endpoint
+      // Fetch all users to count non-admin users
+      const usersResponse = await api.admin.getAllUsers();
+      const allUsers = usersResponse.data?.users || [];
+      
+      // Count only non-admin users (is_admin: false)
+      const nonAdminUsers = allUsers.filter(user => user.is_admin === false);
+      const nonAdminCount = nonAdminUsers.length;
+      
+      // Use admin dashboard API for other stats
       const dashboardResponse = await api.admin.getDashboard();
       const dashboard = dashboardResponse.data?.dashboard;
       
       if (dashboard) {
         setStats({
-          totalUsers: dashboard.stats.total_users,
+          totalUsers: nonAdminCount, // Only count non-admin users
           activeEnrollments: dashboard.stats.total_enrollments,
           totalRevenue: 0, // This would need to be calculated from payments
           certificatesIssued: dashboard.stats.total_certificates,
@@ -111,7 +119,7 @@ const AdminDashboard = () => {
       label: "Total Users",
       value: stats.totalUsers.toLocaleString(),
       change: calculatePercentageChange(stats.totalUsers, stats.previousUsers || 0),
-      changeType: (stats.totalUsers >= (stats.previousUsers || 0) ? "positive" : "negative") as const,
+      changeType: (stats.totalUsers >= (stats.previousUsers || 0) ? "positive" : "negative"),
       icon: Users,
       color: "text-blue-600 bg-blue-500/10",
     },
@@ -119,7 +127,7 @@ const AdminDashboard = () => {
       label: "Active Enrollments",
       value: stats.activeEnrollments.toLocaleString(),
       change: calculatePercentageChange(stats.activeEnrollments, stats.previousEnrollments || 0),
-      changeType: (stats.activeEnrollments >= (stats.previousEnrollments || 0) ? "positive" : "negative") as const,
+      changeType: (stats.activeEnrollments >= (stats.previousEnrollments || 0) ? "positive" : "negative"),
       icon: GraduationCap,
       color: "text-green-600 bg-green-500/10",
     },
@@ -127,7 +135,7 @@ const AdminDashboard = () => {
       label: "Total Revenue",
       value: `₹${stats.totalRevenue.toLocaleString("en-IN")}`,
       change: calculatePercentageChange(stats.totalRevenue, stats.previousRevenue || 0),
-      changeType: (stats.totalRevenue >= (stats.previousRevenue || 0) ? "positive" : "negative") as const,
+      changeType: (stats.totalRevenue >= (stats.previousRevenue || 0) ? "positive" : "negative"),
       icon: CreditCard,
       color: "text-purple-600 bg-purple-500/10",
     },
@@ -135,7 +143,7 @@ const AdminDashboard = () => {
       label: "Certificates Issued",
       value: stats.certificatesIssued.toLocaleString(),
       change: calculatePercentageChange(stats.certificatesIssued, stats.previousCertificates || 0),
-      changeType: (stats.certificatesIssued >= (stats.previousCertificates || 0) ? "positive" : "negative") as const,
+      changeType: (stats.certificatesIssued >= (stats.previousCertificates || 0) ? "positive" : "negative"),
       icon: Award,
       color: "text-amber-600 bg-amber-500/10",
     },

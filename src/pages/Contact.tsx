@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
 import ModernButton from "@/components/ui/ModernButton";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { 
   Mail, 
   Phone, 
@@ -24,7 +25,36 @@ const Contact = () => {
     message: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [visibleSections, setVisibleSections] = useState<Set<string>>(new Set());
+  const sectionRefs = useRef<(HTMLElement | null)[]>([]);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const sectionId = entry.target.getAttribute('data-section') || '';
+          if (entry.isIntersecting) {
+            setVisibleSections((prev) => new Set(prev).add(sectionId));
+          }
+        });
+      },
+      {
+        threshold: 0.2,
+        rootMargin: '0px 0px -50px 0px'
+      }
+    );
+
+    sectionRefs.current.forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => {
+      sectionRefs.current.forEach((ref) => {
+        if (ref) observer.unobserve(ref);
+      });
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,198 +74,235 @@ const Contact = () => {
 
   return (
     <PageLayout>
-      <div className="relative min-h-screen circuit-board-bg overflow-hidden">
-        {/* BACKGROUND ELEMENTS */}
-        <div className="absolute inset-0">
-          <div className="absolute top-1/4 -left-20 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float" />
-          <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-accent/15 rounded-full blur-3xl animate-float animation-delay-500" />
-          <div
-            className="absolute inset-0 opacity-5"
-            style={{
-              backgroundImage: `
-                linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
-              `,
-              backgroundSize: "50px 50px",
-            }}
-          />
+      <div className="relative min-h-screen bg-black overflow-hidden">
+        {/* Circuit Board Pattern - Matching Other Sections */}
+        <div className="absolute inset-0 circuit-board-bg opacity-30"></div>
+
+        {/* White Glass Overlay - Matching Other Sections */}
+        <div className="absolute inset-0 z-[5] pointer-events-none">
+          <div className="absolute inset-2 md:inset-8 rounded-3xl md:rounded-[2.5rem] bg-white/5 backdrop-blur-sm border border-white/10" />
         </div>
 
-        {/* 🔥 SINGLE GLASS OVERLAY */}
-        <div className="container mx-auto max-w-7xl relative z-10 px-4 sm:px-6 lg:px-8 mt-8">
-          <div className="bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/15 shadow-2xl p-8 sm:p-12 lg:p-16">
+        {/* Content Container */}
+        <div className="container mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-8 relative z-10">
           {/* HERO */}
-          <section className="mb-16">
-            <span className="text-accent text-sm uppercase tracking-wider">
+          <section 
+            ref={(el) => (sectionRefs.current[0] = el)}
+            data-section="hero"
+            className={cn(
+              "text-center mb-20 transition-all duration-1200",
+              visibleSections.has('hero') ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-20 scale-95"
+            )}
+          >
+            <span className={cn(
+              "text-cyan-400 font-medium text-sm uppercase tracking-wider inline-block transition-all duration-700 delay-200",
+              visibleSections.has('hero') ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
+            )}>
               Get In Touch
             </span>
-            <h1
-              className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mt-4 mb-6"
-              style={{ fontFamily: "'Nasalization', sans-serif" }}
-            >
+            <h1 className={cn(
+              "text-4xl md:text-5xl font-heading font-bold text-white mt-4 mb-6 transition-all duration-800 delay-300",
+              visibleSections.has('hero') ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+            )}>
               Let's Start a{" "}
               <span className="hero-text-gradient">Conversation</span>
             </h1>
-            <p className="text-lg text-white/70 max-w-3xl">
+            <p className={cn(
+              "text-lg text-gray-300 max-w-3xl mx-auto leading-relaxed transition-all duration-700 delay-500",
+              visibleSections.has('hero') ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+            )}>
               Have a project in mind or want to learn more about our services? We'd love to hear from you.
             </p>
           </section>
           {/* CONTACT SECTION */}
-          <section>
+          <section 
+            ref={(el) => (sectionRefs.current[1] = el)}
+            data-section="contact"
+            className={cn(
+              "transition-all duration-1000 delay-200",
+              visibleSections.has('contact') ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
+            )}
+          >
             <div className="grid lg:grid-cols-5 gap-12">
-              <div className="lg:col-span-2 space-y-8">
+              <div className={cn(
+                "lg:col-span-2 space-y-8 transition-all duration-800 delay-300",
+                visibleSections.has('contact') ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-16"
+              )}>
                 <div>
                   <h2 className="text-2xl font-heading font-semibold text-white mb-6">
                     Contact Information
                   </h2>
-                  <p className="text-white/70 mb-8">
+                  <p className="text-gray-300 mb-8 leading-relaxed">
                     Reach out to us through any of the following channels. We typically respond within 24 hours.
                   </p>
                 </div>
 
-              <div className="space-y-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
-                    <Mail className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-white mb-1">Email</h4>
-                    <a href="mailto:hello@QThinkSolutions.com" className="text-white/60 hover:text-cyan-400 transition-colors">
-                      hello@QThinkSolutions.com
-                    </a>
-                  </div>
+                <div className="space-y-6">
+                  {[
+                    { icon: Mail, label: "Email", value: "hello@QThinkSolutions.com", href: "mailto:hello@QThinkSolutions.com" },
+                    { icon: Phone, label: "Phone", value: "+91 98765 43210", href: "tel:+919876543210" },
+                    { icon: MapPin, label: "Office", value: "Agti Nagar, Vennampatti Housing Board, Dharmapuri-5", href: null },
+                    { icon: Clock, label: "Business Hours", value: "Monday - Friday: 9:00 AM - 6:00 PM | Saturday: 10:00 AM - 2:00 PM", href: null }
+                  ].map((item, index) => (
+                    <div 
+                      key={item.label}
+                      className={cn(
+                        "flex items-start gap-4 transition-all duration-700",
+                        visibleSections.has('contact') ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+                      )}
+                      style={{ transitionDelay: visibleSections.has('contact') ? `${400 + index * 150}ms` : '0ms' }}
+                    >
+                      <div className={cn(
+                        "w-12 h-12 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0 transition-all duration-800",
+                        visibleSections.has('contact') ? "scale-100 rotate-0 opacity-100" : "scale-0 rotate-180 opacity-0"
+                      )}
+                        style={{ transitionDelay: visibleSections.has('contact') ? `${500 + index * 150}ms` : '0ms' }}
+                      >
+                        <item.icon className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-white mb-1">{item.label}</h4>
+                        {item.href ? (
+                          <a href={item.href} className="text-gray-400 hover:text-cyan-400 transition-colors">
+                            {item.value}
+                          </a>
+                        ) : (
+                          <p className="text-gray-400">
+                            {item.value.split('|').map((line, i) => (
+                              <span key={i}>
+                                {line.trim()}
+                                {i < item.value.split('|').length - 1 && <br />}
+                              </span>
+                            ))}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
-                    <Phone className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-white mb-1">Phone</h4>
-                    <a href="tel:+919876543210" className="text-white/60 hover:text-cyan-400 transition-colors">
-                      +91 98765 43210
-                    </a>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
-                    <MapPin className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-white mb-1">Office</h4>
-                    <p className="text-white/60">
-                      Agti Nagar, Vennampatti Housing Board,<br />
-                      Dharmapuri-5
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
-                    <Clock className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-white mb-1">Business Hours</h4>
-                    <p className="text-white/60">
-                      Monday - Friday: 9:00 AM - 6:00 PM<br />
-                      Saturday: 10:00 AM - 2:00 PM
-                    </p>
+                {/* SOCIAL LINKS */}
+                <div className={cn(
+                  "pt-4 border-t border-cyan-500/30 transition-all duration-700 delay-800",
+                  visibleSections.has('contact') ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+                )}>
+                  <h4 className="font-medium text-white mb-4">Follow Us</h4>
+                  <div className="flex gap-3">
+                    {[
+                      { icon: Linkedin, label: "LinkedIn" },
+                      { icon: Twitter, label: "Twitter" }
+                    ].map((social, index) => (
+                      <a
+                        key={social.label}
+                        href="#"
+                        className={cn(
+                          "w-10 h-10 rounded-lg bg-black/40 border border-cyan-500/30 flex items-center justify-center text-gray-400 hover:border-cyan-400 hover:text-cyan-400 transition-all duration-500",
+                          visibleSections.has('contact') ? "opacity-100 scale-100" : "opacity-0 scale-90"
+                        )}
+                        style={{ transitionDelay: visibleSections.has('contact') ? `${900 + index * 100}ms` : '0ms' }}
+                      >
+                        <social.icon className="w-5 h-5" />
+                      </a>
+                    ))}
                   </div>
                 </div>
               </div>
-
-              {/* SOCIAL LINKS */}
-              <div className="pt-6 border-t border-cyan-500/30">
-                <h4 className="font-medium text-white mb-4">Follow Us</h4>
-                <div className="flex gap-3">
-                  <a
-                    href="#"
-                    className="w-10 h-10 rounded-lg bg-black/40 border border-cyan-500/30 flex items-center justify-center text-white/60 hover:border-cyan-400 hover:text-cyan-400 transition-colors"
-                  >
-                    <Linkedin className="w-5 h-5" />
-                  </a>
-                  <a
-                    href="#"
-                    className="w-10 h-10 rounded-lg bg-black/40 border border-cyan-500/30 flex items-center justify-center text-white/60 hover:border-cyan-400 hover:text-cyan-400 transition-colors"
-                  >
-                    <Twitter className="w-5 h-5" />
-                  </a>
-                </div>
-              </div>
-            </div>
 
               {/* CONTACT FORM */}
-              <div className="lg:col-span-3">
-                <div className="p-8 rounded-2xl bg-black/40 backdrop-blur-md border-2 border-cyan-500/50 hover:border-cyan-400 hover:shadow-2xl hover:shadow-cyan-500/20 transition-all duration-300"
-                     style={{ transform: 'scale(1)', transition: 'transform 0.3s ease' }}
-                     onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-                     onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
-                  <h2 className="text-2xl font-heading font-semibold text-white mb-6">
+              <div className={cn(
+                "lg:col-span-3 transition-all duration-800 delay-500",
+                visibleSections.has('contact') ? "opacity-100 translate-x-0" : "opacity-0 translate-x-16"
+              )}>
+                <div className={cn(
+                  "p-8 rounded-2xl bg-black/40 backdrop-blur-md border-2 border-cyan-500/50 hover:border-cyan-400 hover:shadow-2xl hover:shadow-cyan-500/20 transition-all duration-700",
+                  visibleSections.has('contact') ? "opacity-100 scale-100" : "opacity-0 scale-95"
+                )}
+                style={{ 
+                  transform: visibleSections.has('contact') ? 'scale(1)' : 'scale(0.95)',
+                  transition: 'transform 0.3s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  <h2 className={cn(
+                    "text-2xl font-heading font-semibold text-white mb-6 transition-all duration-700 delay-200",
+                    visibleSections.has('contact') ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+                  )}>
                     Send Us a Message
                   </h2>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid sm:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="name" className="text-white/80">Full Name</Label>
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className={cn(
+                      "grid sm:grid-cols-2 gap-6 transition-all duration-700 delay-300",
+                      visibleSections.has('contact') ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                    )}>
+                      <div className="space-y-2">
+                        <Label htmlFor="name" className="text-gray-300">Full Name</Label>
+                        <Input
+                          id="name"
+                          placeholder="John Doe"
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          className="bg-black/40 border-cyan-500/30 text-white placeholder:text-gray-500 focus:border-cyan-400 [&:-webkit-autofill]:bg-black/40 [&:-webkit-autofill]:text-white [&:-webkit-autofill]:border-cyan-500/30 [&:autofill]:bg-black/40 [&:autofill]:text-white [&:autofill]:border-cyan-500/30"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email" className="text-gray-300">Email</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="john@example.com"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          className="bg-black/40 border-cyan-500/30 text-white placeholder:text-gray-500 focus:border-cyan-400 [&:-webkit-autofill]:bg-black/40 [&:-webkit-autofill]:text-white [&:-webkit-autofill]:border-cyan-500/30 [&:autofill]:bg-black/40 [&:autofill]:text-white [&:autofill]:border-cyan-500/30"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className={cn(
+                      "space-y-2 transition-all duration-700 delay-400",
+                      visibleSections.has('contact') ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                    )}>
+                      <Label htmlFor="subject" className="text-gray-300">Subject</Label>
                       <Input
-                        id="name"
-                        placeholder="John Doe"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="bg-black/40 border-cyan-500/30 text-white placeholder:text-white/60 focus:border-cyan-400 [&:-webkit-autofill]:bg-black/40 [&:-webkit-autofill]:text-white [&:-webkit-autofill]:border-cyan-500/30 [&:autofill]:bg-black/40 [&:autofill]:text-white [&:autofill]:border-cyan-500/30"
+                        id="subject"
+                        placeholder="How can we help you?"
+                        value={formData.subject}
+                        onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                        className="bg-black/40 border-cyan-500/30 text-white placeholder:text-gray-500 focus:border-cyan-400 [&:-webkit-autofill]:bg-black/40 [&:-webkit-autofill]:text-white [&:-webkit-autofill]:border-cyan-500/30 [&:autofill]:bg-black/40 [&:autofill]:text-white [&:autofill]:border-cyan-500/30"
                         required
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email" className="text-white/80">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="john@example.com"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="bg-black/40 border-cyan-500/30 text-white placeholder:text-white/60 focus:border-cyan-400 [&:-webkit-autofill]:bg-black/40 [&:-webkit-autofill]:text-white [&:-webkit-autofill]:border-cyan-500/30 [&:autofill]:bg-black/40 [&:autofill]:text-white [&:autofill]:border-cyan-500/30"
+                    <div className={cn(
+                      "space-y-2 transition-all duration-700 delay-500",
+                      visibleSections.has('contact') ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                    )}>
+                      <Label htmlFor="message" className="text-gray-300">Message</Label>
+                      <Textarea
+                        id="message"
+                        placeholder="Tell us about your project or inquiry..."
+                        rows={5}
+                        value={formData.message}
+                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                        className="bg-black/40 border-cyan-500/30 text-white placeholder:text-gray-500 focus:border-cyan-400 [&:-webkit-autofill]:bg-black/40 [&:-webkit-autofill]:text-white [&:-webkit-autofill]:border-cyan-500/30 [&:autofill]:bg-black/40 [&:autofill]:text-white [&:autofill]:border-cyan-500/30"
                         required
                       />
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="subject" className="text-white/80">Subject</Label>
-                    <Input
-                      id="subject"
-                      placeholder="How can we help you?"
-                      value={formData.subject}
-                      onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                      className="bg-black/40 border-cyan-500/30 text-white placeholder:text-white/60 focus:border-cyan-400 [&:-webkit-autofill]:bg-black/40 [&:-webkit-autofill]:text-white [&:-webkit-autofill]:border-cyan-500/30 [&:autofill]:bg-black/40 [&:autofill]:text-white [&:autofill]:border-cyan-500/30"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="message" className="text-white/80">Message</Label>
-                    <Textarea
-                      id="message"
-                      placeholder="Tell us about your project or inquiry..."
-                      rows={5}
-                      value={formData.message}
-                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                      className="bg-black/40 border-cyan-500/30 text-white placeholder:text-white/60 focus:border-cyan-400 [&:-webkit-autofill]:bg-black/40 [&:-webkit-autofill]:text-white [&:-webkit-autofill]:border-cyan-500/30 [&:autofill]:bg-black/40 [&:autofill]:text-white [&:autofill]:border-cyan-500/30"
-                      required
-                    />
-                  </div>
-                  <div className="flex justify-center">
-                    <ModernButton 
-                      text={isSubmitting ? "Sending..." : "Send Message"}
-                      onClick={handleSubmit}
-                      disabled={isSubmitting}
-                    />
-                  </div>
-                </form>
+                    <div className={cn(
+                      "flex justify-center transition-all duration-700 delay-600",
+                      visibleSections.has('contact') ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                    )}>
+                      <ModernButton 
+                        text={isSubmitting ? "Sending..." : "Send Message"}
+                        onClick={handleSubmit}
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                  </form>
+                </div>
               </div>
             </div>
-          </div>
           </section>
-          </div>
         </div>
       </div>
     </PageLayout>

@@ -63,32 +63,32 @@ export function UserLayout({ children }: UserLayoutProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 left-0 h-full w-64 bg-sidebar border-r border-sidebar-border z-40 transition-transform duration-300 circuit-board-bg",
+          "fixed top-0 left-0 h-full w-80 bg-sidebar border-r border-sidebar-border z-40 transition-transform duration-300 circuit-board-bg",
           "lg:translate-x-0",
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center gap-3 px-6 border-b border-sidebar-border">
+        <div className="h-20 flex items-center gap-3 px-8 border-b border-sidebar-border">
           <img
             src="https://i.ibb.co/wFJCHfcK/Screenshot-2026-01-21-121113.png"
             alt="QThink Solution Logo"
-            className="w-8 h-8 rounded-lg object-contain"
+            className="w-10 h-10 rounded-lg object-contain"
           />
-          <span className="text-lg font-semibold text-sidebar-foreground">QThink Solution</span>
+          <span className="text-xl font-semibold text-sidebar-foreground">QThink Solution</span>
         </div>
 
         {/* User Info */}
-        <div className="p-4 border-b border-sidebar-border">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-sidebar-primary text-sidebar-primary-foreground flex items-center justify-center">
-              <User className="w-5 h-5" />
+        <div className="p-6 border-b border-sidebar-border">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-sidebar-primary text-sidebar-primary-foreground flex items-center justify-center">
+              <User className="w-6 h-6" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">
+              <p className="text-base font-medium text-sidebar-foreground truncate">
                 {userProfile?.full_name || user?.email?.split('@')[0]}
               </p>
-              <p className="text-xs text-sidebar-foreground/70 truncate">
+              <p className="text-sm text-sidebar-foreground/70 truncate">
                 {user?.email}
               </p>
             </div>
@@ -96,7 +96,7 @@ export function UserLayout({ children }: UserLayoutProps) {
         </div>
 
         {/* Navigation */}
-        <nav className="p-4 space-y-1">
+        <nav className="p-6 space-y-2">
           {navItems.map((item) => {
             const isActive = location.pathname === item.href;
             return (
@@ -105,26 +105,26 @@ export function UserLayout({ children }: UserLayoutProps) {
                 to={item.href}
                 onClick={() => setIsSidebarOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
+                  "flex items-center gap-4 px-5 py-4 rounded-lg transition-colors",
                   isActive
                     ? "bg-sidebar-primary text-sidebar-primary-foreground"
                     : "text-sidebar-foreground hover:bg-sidebar-accent"
                 )}
               >
-                <item.icon className="w-5 h-5" />
-                <span className="font-medium">{item.label}</span>
-                {isActive && <ChevronRight className="w-4 h-4 ml-auto" />}
+                <item.icon className="w-6 h-6" />
+                <span className="font-medium text-base">{item.label}</span>
+                {isActive && <ChevronRight className="w-5 h-5 ml-auto" />}
               </Link>
             );
           })}
         </nav>
 
         {/* Footer */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-sidebar-border">
+        <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-sidebar-border">
           <ModernButton
             text="Logout"
             onClick={handleLogout}
-            className="w-full justify-start"
+            className="w-full justify-start text-lg py-4 px-6"
           />
         </div>
       </aside>
@@ -138,7 +138,7 @@ export function UserLayout({ children }: UserLayoutProps) {
       )}
 
       {/* Main Content */}
-      <main className="lg:ml-64 pt-16 lg:pt-0 min-h-screen">
+      <main className="lg:ml-80 pt-16 lg:pt-0 min-h-screen">
         <div className="p-4 lg:p-8">{children}</div>
       </main>
     </div>

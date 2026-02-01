@@ -23,7 +23,7 @@ interface NavItem {
 
 export function TubelightNavbar() {
   const location = useLocation()
-  const { user } = useAuth()
+  const { user, isAdmin } = useAuth()
   const [activeTab, setActiveTab] = useState("Home")
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
@@ -49,13 +49,13 @@ export function TubelightNavbar() {
   return (
     <>
       <div className="fixed top-0 left-0 right-0 z-50">
-        <div className="flex justify-center mt-2">
+        <div className="flex justify-center mt-1 px-2 md:px-8">
           {/* NAVBAR */}
           <div
             className="
               flex items-center justify-between
-              w-full max-w-6xl
-              px-2 md:px-3 py-1
+              w-full max-w-7xl
+              px-4 md:px-6 py-1.5
               rounded-full
               bg-black/90 backdrop-blur-lg
               border border-cyan-500/30 shadow-lg
@@ -65,14 +65,14 @@ export function TubelightNavbar() {
             {/* LOGO */}
             <Link
               to={user ? "/dashboard" : "/"}
-              className="flex items-center gap-2 px-3 py-1 rounded-full hover:bg-white/5 transition"
+              className="flex items-center gap-2 px-2 py-0.5 rounded-full hover:bg-white/5 transition"
             >
               <img
                 src="https://i.ibb.co/wFJCHfcK/Screenshot-2026-01-21-121113.png"
                 alt="QThink Solution Logo"
                 className="w-5 h-5 rounded-md object-contain"
               />
-              <span className="text-lg font-heading font-semibold hero-text-gradient">
+              <span className="text-xl font-bold hero-text-gradient">
                 QThink Solutions
               </span>
             </Link>
@@ -89,9 +89,9 @@ export function TubelightNavbar() {
                     to={item.url}
                     onClick={() => setActiveTab(item.name)}
                     className={cn(
-                      "relative px-3 py-1.5 rounded-full text-sm transition",
+                      "relative px-3 py-1.5 rounded-full text-base font-bold transition",
                       "text-white/80 hover:text-cyan-400 hover:bg-white/10",
-                      isActive && "text-cyan-400 bg-cyan-500/20 font-semibold"
+                      isActive && "text-cyan-400 bg-cyan-500/20 font-bold"
                     )}
                   >
                     <span>{item.name}</span>
@@ -120,16 +120,16 @@ export function TubelightNavbar() {
                   <>
                     <Link
                       to="/login"
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-white/90 hover:text-white hover:bg-cyan-500/20 border-2 border/10 transition"
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-full text-base font-bold text-white/90 hover:text-white hover:bg-cyan-500/20 border-2 border/10 transition"
                     >
-                      <LogIn size={14} />
+                      <LogIn size={16} />
                       <span>Login</span>
                     </Link>
                     <Link
                       to="/signup"
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cyan-500 text-black text-sm font-medium hover:bg-cyan-400 transition border border-cyan-400/30"
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500 text-black text-base font-bold hover:bg-cyan-400 transition border border-cyan-400/30"
                     >
-                      <UserPlus size={14} />
+                      <UserPlus size={16} />
                       <span>Sign Up</span>
                     </Link>
                   </>
@@ -184,7 +184,7 @@ export function TubelightNavbar() {
                 <Link
                   to="/login"
                   onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-white/10 bg-white/5 text-white font-medium"
+                  className="flex items-center justify-center gap-3 w-full py-4 rounded-xl border border-white/10 bg-white/5 text-white font-bold text-lg"
                 >
                   <LogIn size={20} />
                   Login
@@ -192,7 +192,7 @@ export function TubelightNavbar() {
                 <Link
                   to="/signup"
                   onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-cyan-500 text-black font-bold"
+                  className="flex items-center justify-center gap-3 w-full py-4 rounded-xl bg-cyan-500 text-black font-bold text-lg"
                 >
                   <UserPlus size={20} />
                   Sign Up
